@@ -1,25 +1,27 @@
-import logo from './logo.svg';
-import './App.css';
+import React,{} from 'react';
+import {BrowserRouter,Routes,Route,Navigate} from 'react-router-dom';
+import Login from './components/Login/Login';
+import Home from './components/Home/Home';
+import PurchaseOrder from './components/PurchaseOrder/PurchaseOrder';
 
-function App() {
-  return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
-  );
+// datetime
+import { LocalizationProvider } from '@mui/x-date-pickers';
+import { AdapterMoment } from '@mui/x-date-pickers/AdapterMoment'
+
+const App = () =>{
+    return(
+        <BrowserRouter>
+            <LocalizationProvider dateAdapter={AdapterMoment}>
+            <Routes>
+                <Route index path="/" element={<Navigate to="/purchase-orders/"/>} />
+                <Route index path="/purchase-orders" element={<Home/>} />
+                <Route index path="/purchase-order-details/" element={<PurchaseOrder/>} />
+                <Route path="/login" element={<Login/>}  />
+                <Route path="*" element={<Navigate to="/purchase-orders/"/>} />
+            </Routes>
+            </LocalizationProvider>
+        </BrowserRouter>
+    )
 }
 
 export default App;
