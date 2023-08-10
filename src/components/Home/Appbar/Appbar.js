@@ -1,4 +1,4 @@
-import * as React from 'react';
+import React,{useState,useEffect} from 'react';
 import AppBar from '@mui/material/AppBar';
 import Box from '@mui/material/Box';
 import Toolbar from '@mui/material/Toolbar';
@@ -23,10 +23,19 @@ import DialogContent from '@mui/material/DialogContent';
 import DialogContentText from '@mui/material/DialogContentText';
 import DialogTitle from '@mui/material/DialogTitle';
 
-
+import {useDispatch} from 'react-redux';
+import { AUTH_LOGOUT } from '../../../constant/actionTypes';
+import { useNavigate,useLocation } from 'react-router';
+import decode from 'jwt-decode';
 
 
 export default function MenuAppBar() {
+
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const location  = useLocation();
+
+  const [user,setUser] = useState(JSON.parse(localStorage.getItem('profile')));
 
   const [anchorEl, setAnchorEl] = React.useState(null);
 
@@ -34,20 +43,42 @@ export default function MenuAppBar() {
     setAnchorEl(event.currentTarget);
   };
 
+  const handleLogout = () =>{
+     dispatch({type: AUTH_LOGOUT});
+     navigate(`/login`);
+     setUser(null);
+  }
+
   const handleCloseMenu = () => {
     setAnchorEl(null);
-    handleClickOpen();
+    handleOpenDialog();
   };
 
 
-  const [open, setOpen] = React.useState(false);
+  useEffect(()=>{
 
-  const handleClickOpen = () => {
-    setOpen(true);
+    const token = user?.token;
+
+    if(token){
+      const decodedToken = decode(token);
+      if(decodedToken.exp * 1000 < new Date().getTime())
+        handleLogout();
+    }else{
+      handleLogout();
+    }
+    console.log(JSON.parse(localStorage.getItem('profile')));
+  },[]);
+
+  
+
+  const [openDialog, setOpenDialog] = React.useState(false);
+
+  const handleOpenDialog = () => {
+    setOpenDialog(true);
   };
 
-  const handleClickClose = () => {
-    setOpen(false);
+  const handleCloseDialog = () => {
+    setOpenDialog(false);
   };
 
   return (
@@ -60,7 +91,7 @@ export default function MenuAppBar() {
           {
             <div>
               <Grid container rowSpacing={1} direction="row" justifyContent="center" alignItems="center" columnSpacing={{ xs: 1, sm: 2, md: 3 }}>
-              <Typography>Kristine Gonzales</Typography>  
+              <Typography>{`${user?.result?.firstname} ${user?.result?.lastname}`}</Typography>  
               <IconButton
                 size="large"
                 aria-label="account of current user"
@@ -79,6 +110,7 @@ export default function MenuAppBar() {
                 onClose={handleCloseMenu}
               >
                 <MenuItem onClick={handleCloseMenu}>Change Password</MenuItem>
+                <MenuItem onClick={handleLogout}>Logout</MenuItem>
               </Menu>
             </div>
             }
@@ -86,26 +118,21 @@ export default function MenuAppBar() {
       </AppBar>
 
 {/* dialog box */}
-<Dialog open={open} onClose={handleClickClose}>
-        <DialogTitle>Subscribe</DialogTitle>
+<Dialog open={openDialog} onClose={handleCloseDialog}>
+        <DialogTitle>Change Password</DialogTitle>
         <DialogContent>
-          <DialogContentText>
-            To subscribe to this website, please enter your email address here. We
-            will send updates occasionally.
-          </DialogContentText>
-          <TextField
-            autoFocus
-            margin="dense"
-            id="name"
-            label="Email Address"
-            type="email"
-            fullWidth
-            variant="standard"
-          />
+        <Box component="form" noValidate autoComplete="off"
+            sx={{
+                '& .MuiTextField-root': { m: 1, width: '50ch' },
+            }}>
+          <TextField id="outlined-basic" label="Old Password" variant="outlined" fullWidth/>
+          <TextField id="outlined-basic" label="New Password" variant="outlined" fullWidth/>
+          <TextField id="outlined-basic" label="Retype Password" variant="outlined" fullWidth/>
+          </Box>
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleClickClose}>Cancel</Button>
-          <Button onClick={handleClickClose}>Subscribe</Button>
+          <Button onClick={handleCloseDialog} variant="contained" color="warning">Cancel</Button>
+          <Button onClick={handleCloseDialog} variant="contained">Save</Button>
         </DialogActions>
       </Dialog>
 

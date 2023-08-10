@@ -4,6 +4,7 @@ import {Grow} from '@mui/material';
 import Grid from '@mui/material/Unstable_Grid2'
 
 import PODetails from './PODetails/PODetails';
+import POGrid from './PODetails/POGrid';
 
 const PurchaseOrder = () =>{
 
@@ -13,6 +14,7 @@ const PurchaseOrder = () =>{
       <Grow in>
         <div>
             <PODetails/> 
+            <POGrid/>
         </div>
       </Grow>
     </>

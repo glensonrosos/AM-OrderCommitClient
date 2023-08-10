@@ -6749,6 +6749,11 @@ jszip@^3.5.0:
     readable-stream "~2.3.6"
     setimmediate "^1.0.5"
 
+jwt-decode@^3.1.2:
+  version "3.1.2"
+  resolved "https://registry.yarnpkg.com/jwt-decode/-/jwt-decode-3.1.2.tgz#3fb319f3675a2df0c2895c8f5e9fa4b67b04ed59"
+  integrity sha512-UfpWE/VZn0iP50d8cz9NrZLM9lSWhcJ+0Gt/nm4by88UL+J1SiKN8/5dkjMmbEzwL2CAe+67GsegCbIKtbp75A==
+
 kind-of@^6.0.2:
   version "6.0.3"
   resolved "https://registry.npmjs.org/kind-of/-/kind-of-6.0.3.tgz"
@@ -8341,7 +8346,7 @@ react-error-overlay@^6.0.11:
 
 react-file-base64@^1.0.3:
   version "1.0.3"
-  resolved "https://registry.npmjs.org/react-file-base64/-/react-file-base64-1.0.3.tgz"
+  resolved "https://registry.yarnpkg.com/react-file-base64/-/react-file-base64-1.0.3.tgz#4174efa79445b139902ecc2730fc417efe79cb88"
   integrity sha512-itGMFH6IkJUZF2p0YXQnUBqzUHFaMYcs+ssD9e4j1XJGHRibGe8kiLr6y46oAIw1JknX/bJUUogDJOk/o91TMg==
   dependencies:
     react "^15.6.1"

@@ -1,9 +1,14 @@
-import * as React from 'react';
+import React,{useState} from 'react';
 import {Avatar,Button,CssBaseline,TextField,FormControlLabel,Checkbox,Link,
     Paper,Box,Grid,Typography,Badge,Stack} from '@mui/material'
 import {LockOutlined} from '@mui/icons-material/';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import PebaImage from '../images/PebaImage.jpeg';
+import {useDispatch} from 'react-redux';
+import { useNavigate } from 'react-router';
+import { signIn } from '../../actions/auth';
+
+
 
 function Copyright(props) {
   return (
@@ -23,13 +28,28 @@ function Copyright(props) {
 const defaultTheme = createTheme();
 
 export default function SignInSide() {
-  const handleSubmit = (event) => {
-    event.preventDefault();
-    const data = new FormData(event.currentTarget);
-    console.log({
-      email: data.get('email'),
-      password: data.get('password'),
-    });
+
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+
+  const [user,setUser] = useState({
+    username:null,
+    password:null
+  });
+
+  const onChangeText = (name,e) =>{
+    setUser({
+      ...user,
+      [name] : e.target.value
+    })
+  }
+
+  const handleSubmit = () => {
+    if(user.username && user.password)
+      //dispatch(login(user,history))
+      dispatch(signIn(user,navigate));
+    else
+      alert('error')
   };
 
   return (
@@ -102,35 +122,33 @@ export default function SignInSide() {
               Sign in
             </Typography>
             
-            <Box component="form" noValidate onSubmit={handleSubmit} sx={{ mt: 1 }}>
+            <Box component="div" noValidate sx={{ mt: 1 }}>
               <TextField
                 margin="normal"
                 required
                 fullWidth
-                id="email"
-                label="Email Address"
-                name="email"
-                autoComplete="email"
+                id="username"
+                onChange={(e)=>onChangeText('username',e)}
+                label="Username"
                 autoFocus
               />
               <TextField
                 margin="normal"
                 required
                 fullWidth
-                name="password"
                 label="Password"
+                onChange={(e)=>onChangeText('password',e)}
+                onKeyDown={(e)=> e.keyCode === 13 && handleSubmit() }
                 type="password"
-                id="password"
-                autoComplete="current-password"
               />
             
               <Button
-                type="submit"
                 fullWidth
                 variant="contained"
                 sx={{ mt: 3, mb: 2 }}
+                onClick={handleSubmit}
               >
-                Sign In
+                Sign In 
               </Button>
               
               <Copyright sx={{ mt: 5 }} />
