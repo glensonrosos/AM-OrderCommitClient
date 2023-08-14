@@ -1,4 +1,4 @@
-import { GET_ORDER_ITEMS_POID,GET_ORDER_ITEM_IMAGE,DELETE_ORDER_ITEM,CREATE_ORDER_ITEM_POID,UPDATE_CELL_ORDER_ITEM,START_LOADING_HOME,END_LOADING_HOME } from "../constant/actionTypes";
+import { GET_ORDER_ITEMS_POID,GET_ORDER_ITEM_IMAGE,DELETE_ORDER_ITEM,CREATE_ORDER_ITEM_POID,UPDATE_CELL_ORDER_ITEM,START_LOADING_HOME,END_LOADING_HOME, UPDATE_CELL_ORDER_ITEM_IMAGE } from "../constant/actionTypes";
 
 const defaultState = {
     isLoading: false,
@@ -35,6 +35,7 @@ export default(state = defaultState,action) =>{
                 })
             }
         case UPDATE_CELL_ORDER_ITEM:
+        case UPDATE_CELL_ORDER_ITEM_IMAGE:
             return{
                 ...state,
                 orderItems : state.orderItems.map((oi)=> oi._id === action.payload._id ? action.payload : oi)

@@ -1,5 +1,5 @@
 import * as api from '../api';
-import { GET_ORDER_ITEMS_POID,GET_ORDER_ITEM_IMAGE,DELETE_ORDER_ITEM,CREATE_ORDER_ITEM_POID,START_LOADING_HOME,END_LOADING_HOME, UPDATE_CELL_ORDER_ITEM } from '../constant/actionTypes';
+import { GET_ORDER_ITEMS_POID,GET_ORDER_ITEM_IMAGE,DELETE_ORDER_ITEM,CREATE_ORDER_ITEM_POID,START_LOADING_HOME,END_LOADING_HOME, UPDATE_CELL_ORDER_ITEM,UPDATE_CELL_ORDER_ITEM_IMAGE } from '../constant/actionTypes';
 
 export const getOrderItems = (id) => async (dispatch) =>{
     try{
@@ -45,6 +45,20 @@ export const updateCellOrderItem = (id,newOrderitem) => async (dispatch) =>{
         const { data } = await api.updateCellOrderItem(id,newOrderitem);
 
         dispatch({type: UPDATE_CELL_ORDER_ITEM, payload: data});
+
+       // dispatch({type: END_LOADING_HOME});
+
+    }catch(error){
+        console.log(error);
+    }
+}
+
+export const updateCellOrderItemImage = (id,image) => async (dispatch) =>{
+    try{
+        //dispatch({type: START_LOADING_HOME});
+        const { data } = await api.updateCellOrderItemImage(id,image);
+
+        dispatch({type: UPDATE_CELL_ORDER_ITEM_IMAGE, payload: data});
 
        // dispatch({type: END_LOADING_HOME});
 

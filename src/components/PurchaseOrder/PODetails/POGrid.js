@@ -9,7 +9,7 @@ import moment from 'moment';
 import FileBase64 from 'react-file-base64';
 
 import { useDispatch,useSelector } from 'react-redux';
-import { getOrderItems,createOrderItem,updateCellOrderItem,deleteOrderItem,getOrderItemImage } from '../../../actions/orderitems';
+import { getOrderItems,createOrderItem,updateCellOrderItem,updateCellOrderItemImage,deleteOrderItem,getOrderItemImage } from '../../../actions/orderitems';
 import NoImage from '../../images/NoImage.jpeg'
 
 import Dialog from '@mui/material/Dialog';
@@ -131,7 +131,8 @@ export default function ServerSidePersistence() {
     if(imageData?.image === NoImage || imageData?.image === imageData.rowSelected.image ){
       alert('no image attached');
     }else{
-      dispatch(updateCellOrderItem(imageData.rowSelected.id,{...imageData.rowSelected,image:imageData.image}));
+      
+      dispatch(updateCellOrderItem(imageData.rowSelected._id,{image:imageData.image}));
       setSnackbar({ children: 'Successfully uploaded image', severity: 'success' });
       handleCloseDialog();
     }
