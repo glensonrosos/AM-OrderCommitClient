@@ -2,6 +2,7 @@ import React,{} from 'react';
 import {BrowserRouter,Routes,Route,Navigate} from 'react-router-dom';
 import Login from './components/Login/Login';
 import Home from './components/Home/Home';
+import Test from './components/test/test';
 import PurchaseOrder from './components/PurchaseOrder/PurchaseOrder';
 
 // datetime
@@ -17,12 +18,13 @@ const App = () =>{
         <BrowserRouter>
             <LocalizationProvider dateAdapter={AdapterMoment}>
             <Routes>
-                <Route index path="/" element={<Navigate to="/purchase-orders/"/>} />
+                <Route index path="/" element={<Navigate to="/purchase-orders"/>} />
                 <Route path="/login" element={<Login/>} />
+                <Route path="/test" element={<Test/>} />
                 <Route path="/purchase-orders" element={<Home/>} />
                 <Route path="/purchase-orders/search" element={<Home/>} />
                 <Route path="/purchase-order-detail/:id" element={<PurchaseOrder/>} />
-                <Route path="*" element={<Navigate to="/purchase-orders/"/>} />
+                <Route path="*" element={<Navigate to="/purchase-orders"/>} />
             </Routes>
             </LocalizationProvider>
         </BrowserRouter>

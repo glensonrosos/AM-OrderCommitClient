@@ -1,5 +1,6 @@
 import * as api from '../api';
-import {GET_POS,GET_PO,GET_POS_BY_SEARCH,UPDATE_PO_BY_AM,UPDATE_PO_BY_LOGISTICS,START_LOADING_HOME,CREATE_PO,END_LOADING_HOME } from '../constant/actionTypes';
+import {GET_POS,GET_PO,GET_POS_BY_SEARCH,UPDATE_PO_BY_AM,UPDATE_PO_BY_LOGISTICS,START_LOADING_HOME,
+    CREATE_PO,END_LOADING_HOME,UPDATE_CELL_EDIT_BY,UPDATE_PO_BY_AUTO,GET_REQ_ATT_DEPTS } from '../constant/actionTypes';
 
 export const getPOs = (page) => async (dispatch) =>{
     try{
@@ -9,6 +10,20 @@ export const getPOs = (page) => async (dispatch) =>{
 
         console.log(data);
         dispatch({type: GET_POS,payload:data});
+
+        dispatch({type: END_LOADING_HOME});
+    }catch(error){
+        console.log(error.message);
+    }
+}
+
+export const getReqAttDepts = (page) => async (dispatch) =>{
+    try{
+        dispatch({type: START_LOADING_HOME});
+
+        const {data} = await api.getReqAttDepts();
+
+        dispatch({type: GET_REQ_ATT_DEPTS,payload:data});
 
         dispatch({type: END_LOADING_HOME});
     }catch(error){
@@ -68,6 +83,35 @@ export const updatePOByAm = (id,updatePO) => async (dispatch) =>{
         console.log(data);
         dispatch({type:UPDATE_PO_BY_AM,payload:data});
         dispatch({type: END_LOADING_HOME});
+
+    }catch(error){
+        console.log(error);
+    }
+}
+
+export const updatePOByAuto = (id,updatePO) => async (dispatch) =>{
+    try{
+        dispatch({type:START_LOADING_HOME});
+
+        const {data} = await api.updatePOByAuto(id,updatePO);
+
+        console.log(data);
+        dispatch({type:UPDATE_PO_BY_AUTO,payload:data});
+        dispatch({type: END_LOADING_HOME});
+
+    }catch(error){
+        console.log(error);
+    }
+}
+
+export const updateCellEditedBy = (id,updatePO) => async (dispatch) =>{
+    try{
+       
+        const {data} = await api.updateCellEditedBy(id,updatePO);
+
+        console.log(data);
+        dispatch({type:UPDATE_CELL_EDIT_BY,payload:data});
+       
 
     }catch(error){
         console.log(error);

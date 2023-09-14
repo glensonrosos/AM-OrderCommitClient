@@ -1,8 +1,11 @@
-import { GET_ORDER_ITEMS_POID,GET_ORDER_ITEM_IMAGE,DELETE_ORDER_ITEM,CREATE_ORDER_ITEM_POID,UPDATE_CELL_ORDER_ITEM,START_LOADING_HOME,END_LOADING_HOME, UPDATE_CELL_ORDER_ITEM_IMAGE } from "../constant/actionTypes";
+import { GET_ORDER_ITEMS_POID,GET_ORDER_ITEM_IMAGE,DELETE_ORDER_ITEM,CREATE_ORDER_ITEM_POID,
+    UPDATE_CELL_ORDER_ITEM,START_LOADING_HOME,END_LOADING_HOME, UPDATE_CELL_ORDER_ITEM_IMAGE,
+    GET_ORDER_ITEM_STATUS_OPEN } from "../constant/actionTypes";
 
 const defaultState = {
     isLoading: false,
     orderItems:[],
+    departmentStatus: null
 }
 
 
@@ -54,6 +57,11 @@ export default(state = defaultState,action) =>{
             return{
                 ...state,
                 isLoading:false
+            }
+        case GET_ORDER_ITEM_STATUS_OPEN:
+            return{
+                ...state,
+                departmentStatus: action.payload
             }
         default:
             return state;

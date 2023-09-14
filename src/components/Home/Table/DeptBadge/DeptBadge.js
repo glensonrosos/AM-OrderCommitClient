@@ -1,27 +1,42 @@
-import React from 'react';
-import {Stack,Badge,Link} from '@mui/material';
+import React,{useState,useEffect} from 'react';
+import {Stack,Badge,Link,Typography} from '@mui/material';
+import {getReqAttDepts,getPOBySearch} from '../../../../actions/purchaseOrders';
+import { useDispatch,useSelector } from 'react-redux';
 
 const DeptBadge = () =>{
+
+    const [notReqAttDepts,setReqAttDepts] = useState();
+    const {isLoading,reqAttDepts} = useSelector(state=> state.purchaseOrders);
+    const dispatch = useDispatch();
+
+    useEffect(()=>{
+        dispatch(getReqAttDepts());
+    },[]);
+
+    useEffect(()=>{
+        if(!isLoading && reqAttDepts)
+            setReqAttDepts(reqAttDepts);
+    },[isLoading,reqAttDepts])
     
     return (
         <Stack direction={{ xs: 'row', sm: 'row' }} spacing={{ xs: 5, sm: 5, md: 5 }} useFlexGap flexWrap="wrap">
-            <Badge color="error" badgeContent={3} sx={{ "& .MuiBadge-badge": { fontSize: 15, height: 20, minWidth: 20, borderRadius:50 } }}>
-                <Link href="#" variant="h5" >AM</Link>  
+            <Badge color="error" badgeContent={notReqAttDepts?.AM} sx={{ "& .MuiBadge-badge": { fontSize: 15, height: 20, minWidth: 20, borderRadius:50 } }}>
+                <Link href="/purchase-orders/search?option=reqAttDepts&value=AM&page=1" variant="h5" >AM</Link>  
             </Badge>
-            <Badge color="error" badgeContent={3} sx={{ "& .MuiBadge-badge": { fontSize: 15, height: 20, minWidth: 20, borderRadius:50 } }}>
-                <Link href="#" variant="h5">PD</Link>  
+            <Badge color="error" badgeContent={notReqAttDepts?.PD} sx={{ "& .MuiBadge-badge": { fontSize: 15, height: 20, minWidth: 20, borderRadius:50 } }}>
+                <Link href="/purchase-orders/search?option=reqAttDepts&value=PD&page=1" variant="h5" >PD</Link>
             </Badge>
-            <Badge color="error" badgeContent={3} sx={{ "& .MuiBadge-badge": { fontSize: 15, height: 20, minWidth: 25, borderRadius:50 } }}>
-                <Link href="/purchase-order-details" variant="h5">PURCH</Link>  
+            <Badge color="error" badgeContent={notReqAttDepts?.PU} sx={{ "& .MuiBadge-badge": { fontSize: 15, height: 20, minWidth: 25, borderRadius:50 } }}>
+                <Link href="/purchase-orders/search?option=reqAttDepts&value=PURCHASING&page=1" variant="h5" >PURCH</Link>  
             </Badge>
-            <Badge color="error" badgeContent={3} sx={{ "& .MuiBadge-badge": { fontSize: 15, height: 20, minWidth: 25, borderRadius:50 } }}>
-                <Link href="#" variant="h5" >PROD</Link>  
+            <Badge color="error" badgeContent={notReqAttDepts?.PROD} sx={{ "& .MuiBadge-badge": { fontSize: 15, height: 20, minWidth: 25, borderRadius:50 } }}>
+            <Link href="/purchase-orders/search?option=reqAttDepts&value=PRODUCTION&page=1" variant="h5" >PROD</Link>  
             </Badge>
-            <Badge color="error" badgeContent={3} sx={{ "& .MuiBadge-badge": { fontSize: 15, height: 20, minWidth: 25, borderRadius:50 } }}>
-                <Link href="#" variant="h5">QA</Link>  
+            <Badge color="error" badgeContent={notReqAttDepts?.QA} sx={{ "& .MuiBadge-badge": { fontSize: 15, height: 20, minWidth: 25, borderRadius:50 } }}>
+                <Link href="/purchase-orders/search?option=reqAttDepts&value=QA&page=1" variant="h5" >QA</Link>  
             </Badge>
-            <Badge color="error" badgeContent={3} sx={{ "& .MuiBadge-badge": { fontSize: 15, height: 20, minWidth: 25, borderRadius:50 } }}>
-                <Link href="#" variant="h5">LOGS</Link>  
+            <Badge color="error" badgeContent={notReqAttDepts?.LOGS} sx={{ "& .MuiBadge-badge": { fontSize: 15, height: 20, minWidth: 25, borderRadius:50 } }}>
+                <Link href="/purchase-orders/search?option=reqAttDepts&value=LOGISCTICS&page=1" variant="h5" >LOGS</Link>  
             </Badge>
         </Stack>
     )

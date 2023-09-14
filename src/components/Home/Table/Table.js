@@ -7,7 +7,7 @@ import TableContainer from '@mui/material/TableContainer';
 import TableHead from '@mui/material/TableHead';
 import TablePagination from '@mui/material/TablePagination';
 import TableRow from '@mui/material/TableRow';
-import { Box,Button,Autocomplete,TextField,Link,Chip,Tooltip,Typography,Pagination,PaginationItem,Stack} from '@mui/material';
+import { Box,Button,Snackbar,Alert,Autocomplete,TextField,Link,Chip,Tooltip,Typography,Pagination,PaginationItem,Stack} from '@mui/material';
 import Grid from '@mui/material/Unstable_Grid2'
 import {Add,Search} from '@mui/icons-material';
 
@@ -30,15 +30,16 @@ import {useDispatch,useSelector} from 'react-redux'
 import {getBuyers} from '../../../actions/buyers';
 import {getStatus} from '../../../actions/status';
 import {createPO,getPOs,getPOBySearch} from '../../../actions/purchaseOrders';
-import { onSpaceOrEnter } from '@mui/x-date-pickers/internals';
+import {AUTH_LOGOUT} from '../../../constant/actionTypes'
 
 
 function useQuery(){
   return new URLSearchParams(useLocation().search);
 }
 
-
 export default function StickyHeadTable() {
+
+  const user = JSON.parse(localStorage.getItem('profile'));
 
   const dispatch = useDispatch();
   const {buyers} = useSelector(state=> state.buyers);
@@ -82,37 +83,156 @@ export default function StickyHeadTable() {
 
   const handleOnChangeSearchInput = (name,e,val=null) =>{
     // remove all spaces trim
+    console.log(val?.id);
     setSearchInput({
       ...searchInput,
-      [name]: name === 'option' ? val?.id : (e.target.value).replace(/ /g, '')
+      // [name]: name === 'option' ? val?.id : (e.target.value).replace(/ /g, '')
+      [name]: name === 'option' ? {id:val?.id,label:val?.label} : e.target.value
     });
   }
 
   const onSearchEnter = (e) => {
     if(e.keyCode === 13 && (searchInput.option != undefined || searchInput.option != null)){
-      setRows([]);
-        dispatch(getPOBySearch(searchInput));
-        navigate(`/purchase-orders/search?option=${searchInput.option}&value=${searchInput.search}`);
+      // set trapping here...
+
+      let flag = true;
+
+      switch(searchInput?.option?.id){
+        case 'poNumber':
+        case 'buyer':
+        case 'status':
+          {
+            const regexPattern = /^(?=.{1,15}$)[a-zA-Z0-9]*-?[a-zA-Z0-9\s]*$|^(?=.{1,15}$)[a-zA-Z0-9]*$/;
+            if(regexPattern.test(searchInput.search)) {
+              console.log(`${searchInput.search} buy status PO is a valid string.`);
+            } else {
+              console.log(`${searchInput.search} buy status PO is not a valid string.`);
+              setSnackbar({ children: `In ${searchInput?.option?.label}, Search Inputed is Invalid`, severity: 'error' });
+              flag = false;
+            }
+          } break;
+        case 'dateIssued':
+        case 'shipDate':
+          {
+            const regexPattern = /^(0[1-9]|1[0-2])\/(0[1-9]|1\d|2\d|3[01])\/(19\d\d|20\d\d)(-(0[1-9]|1[0-2])\/(0[1-9]|1\d|2\d|3[01])\/(19\d\d|20\d\d))?$/;
+
+            if(regexPattern.test(searchInput.search)) {
+              console.log(`${searchInput.search} DATE is a valid string.`);
+            } else {
+              console.log(`${searchInput.search} DATE is not a valid string.`);
+              setSnackbar({ children: `In ${searchInput?.option?.label}, Search Inputed is Invalid`, severity: 'error' });
+              flag = false;
+            } 
+          }break;
+        case 'reqAttDepts':
+          {
+            const regexPattern = /^[a-zA-Z,-]{0,50}$/;;
+
+            if(regexPattern.test(searchInput.search)) {
+              console.log(`${searchInput.search} Department is a valid string.`);
+            } else {
+              console.log(`${searchInput.search} Department is not a valid string.`);
+              setSnackbar({ children: `In ${searchInput?.option?.label}, Search Inputed is Invalid`, severity: 'error' });
+              flag = false;
+            } 
+          }break;
+        default:
+          return;
+      }
+
+      if(flag){
+        setRows([]);
+        dispatch(getPOBySearch({search: searchInput.search.trim().replace(/\s+/g, ' '),option: searchInput?.option?.id,page:1}));
+        navigate(`/purchase-orders/search?option=${searchInput?.option?.id}&value=${searchInput.search}&page=1`);
+        setRows([]);
+      }
     }
   }
 
   const handleSavePO = () =>{
     // trappings
-    //alert(JSON.stringify(input));
-    dispatch(createPO(input,navigate));
-    handleCloseDialog();
+    // input po number 
+    let flag = true;
+    const regexPattern = /^(?=.{1,15}$)[a-zA-Z0-9]*-?[a-zA-Z0-9\s]*$|^(?=.{1,15}$)[a-zA-Z0-9]*$/;
+    if(regexPattern.test(input?.poNumber)) {
+      console.log(`${input?.poNumber} buy status PO is a valid string.`);
+    } else {
+      console.log(`${input.poNumber} buy status PO is not a valid string.`);
+      setSnackbar({ children: `PO Number inputed is invalid, `, severity: 'error' });
+      flag = false;
+    }
+    // buyer
+    const findBuyer = buyers.find(buy => buy === input.buyer);
+    if(findBuyer === undefined || findBuyer === null){
+      console.log(`${input.buyer} buyer is not a valid string.`);
+      setSnackbar({ children: `Buyer inputed is invalid`, severity: 'error' });
+      flag = false;
+    }
+    
+    // date cannot be back to history and empty
+    const compDateIssued = moment(input.dateIssued).isBetween(moment('2000','YYYY'), moment().add(3,'y'));
+    if(!compDateIssued){
+      console.log(`${input.dateIssued} date is invalid.`);
+      setSnackbar({ children: `DateIssued Inputed is Invalid`, severity: 'error' });
+      flag = false;
+    }
+    const compShipDate = moment(input.shipDate).isBetween(moment('2000','YYYY'), moment().add(3,'y'));
+    if(!compShipDate){
+      console.log(`${input.dateIssued} date is invalid.`);
+      setSnackbar({ children: `ShipDate Inputed is Invalid`, severity: 'error' });
+      flag = false;
+    }
+    
+    const user = JSON.parse(localStorage.getItem('profile'));
+
+    const newUser = `${user?.result?.firstname} ${user?.result?.lastname}`;
+    
+
+    if(flag){ 
+      dispatch(createPO({...input,poNumber:input.poNumber.toUpperCase(),editedBy:newUser},navigate));
+      handleCloseDialog();  
+    }
+
   }
 
   //autocomplete
   //const buyerListSelection = [];
 
   useEffect(()=>{
+
+    const user = JSON.parse(localStorage.getItem('profile'));
+    if(!user)
+      navigate('/login');
+
     dispatch(getBuyers());
     dispatch(getStatus());
-    dispatch(getPOs(queryPage));
-   // navigate(`/purchase-orders?page=${queryPage}`);
+
+      if(searchOption !== null && searchValue !== null){
+        // populate search inputs
+        setSearchInput({
+          ...searchInput,
+          option :  searchOptions.find(so => searchOption === so.id),
+          search: searchValue
+        });
+        // dispatch search here..
+        dispatch(getPOBySearch({option:searchOption,search:searchValue,page:queryPage}));
+    }else{
+      dispatch(getPOs(queryPage));
+      navigate(`/purchase-orders?page=${queryPage}`);
+    }
+
    // alert(`${searchOption} => ${searchValue}`)
-  },[dispatch,queryPage]);
+  },[dispatch,queryPage,searchOption,queryPage]);
+
+  const searchOptions = [
+    {id: 'poNumber', label: 'PO #'},
+    {id: 'dateIssued', label: 'Date Issued'},
+    {id: 'buyer', label: 'Buyer'},
+    {id: 'shipDate', label: 'Ship Date'},
+    {id: 'status', label: 'Status'},
+    {id: 'reqAttDepts', label: 'Require Attention'},
+  ];
+
 
   const columns = [
     { id: 'ponumber', label: 'PO Number', minWidth: 170 },
@@ -132,8 +252,13 @@ export default function StickyHeadTable() {
   const rowsData=[];
 
   useEffect(()=>{
-    if(!isLoading && purchaseOrders?.length > 0 && buyers?.length > 0 && status?.length > 0){
 
+    const user = JSON.parse(localStorage.getItem('profile'));
+    if(!user)
+      navigate('/login');
+  
+    if(!isLoading && purchaseOrders?.length > 0 && buyers?.length > 0 && status?.length > 0){
+      setRows([]);
       purchaseOrders?.map(po=>{
 
       let reqDepartments = '';  
@@ -169,14 +294,29 @@ export default function StickyHeadTable() {
 
   const handleChangePage = (newPage) =>{
     //alert('called');
-    navigate(`/purchase-orders?page=${newPage}`);
+    if(searchOption === null)
+      navigate(`/purchase-orders?page=${newPage}`);
+    else
+      navigate(`/purchase-orders/search?option=${searchOption}&value=${searchValue}&page=${newPage}`);
+  }
+
+  const handleSearchClear = () =>{
+    setSearchInput({
+      option: {id: '', label: ''},
+      search:''
+    });
+    navigate(`/purchase-orders?page=1`);
   }
 
   // dialog
   const [openDialog, setOpenDialog] = useState(false);
 
   const handleOpenDialog = () => {
-    setOpenDialog(true);
+    if(user?.result?.department?.department === 'AM'){
+      setOpenDialog(true);
+    }else{
+      setSnackbar({ children: `Only AM Dept. allow to add PO`, severity: 'error' });
+    }
   };
 
   const handleCloseDialog = () => {
@@ -184,14 +324,9 @@ export default function StickyHeadTable() {
   };
   // dialog
 
-  const searchOptions = [
-    {id: 'poNumber', label: 'PO #', year: 1994 },
-    {id: 'dateIssued', label: 'Date Issued', year: 1972 },
-    {id: 'buyer', label: 'Buyer', year: 1974 },
-    {id: 'shipDate', label: 'Ship Date', year: 1974 },
-    {id: 'status', label: 'Status', year: 1974 },
-    {id: 'reqAttDepts', label: 'Require Attention', year: 1974 },
-  ];
+  // SNACKBAR
+  const [snackbar, setSnackbar] = useState(null);
+  const handleCloseSnackbar = () => setSnackbar(null);
 
   return ( 
     <>
@@ -211,7 +346,9 @@ export default function StickyHeadTable() {
                     <Autocomplete
                         disablePortal
                         id="combo-box-demo"
+                        getOptionLabel={(option) => option.label || ""}
                         options={searchOptions}
+                        value={searchInput?.option}
                         sx={{ width: 250 }}
                         onChange={(e,v)=>handleOnChangeSearchInput("option",e,v)}
                         isOptionEqualToValue={(option, value) => option.value === value.value}
@@ -235,13 +372,13 @@ export default function StickyHeadTable() {
                     }
                     placement="bottom"
                     >
-                      <TextField id="outlined-basic" onKeyDown={(e)=>onSearchEnter(e)} onChange={(e,v)=>handleOnChangeSearchInput("search",e,v)} label="Input Search Value" variant="outlined"  xs={{width:1500}} />
+                      <TextField id="outlined-basic" onKeyDown={(e)=>onSearchEnter(e)} onChange={(e,v)=>handleOnChangeSearchInput("search",e,v)} value={searchInput.search} label="Input Search Value" variant="outlined"  xs={{width:1500}} />
                     </Tooltip>
                 </Grid>
             </Grid>
 
         <Grid md={1} lg={1}> 
-        <Button variant="contained" size="small" color="error" onClick={()=>{}} startIcon={<Search/>}>Clear</Button>
+        <Button variant="contained" size="small" color="error" onClick={handleSearchClear} startIcon={<Search/>}>Clear</Button>
         </Grid>
         <Grid xs={11} md={11} lg={11}>
         <Paper sx={{ width: '100%', overflow: 'hidden' }}>
@@ -285,7 +422,7 @@ export default function StickyHeadTable() {
             <Grid container spacing={2} alignItems="end" justifyContent="end">
               <Grid xs={12} md={11} lg={11}>
                 <Box sx={{mt:3}}> </Box>
-              { !searchValue && queryPage && <Stack spacing={2}>
+              <Stack spacing={2}>
                 <Pagination 
                   count={numberOfPages} 
                   page={Number(queryPage) || 1}
@@ -300,11 +437,21 @@ export default function StickyHeadTable() {
                     />
                   )}
                   />
-              </Stack>}
+              </Stack>
                 </Grid>
               </Grid>
               <Grid xs={12} md={1} lg={1}>
             </Grid>
+            {!!snackbar && (
+              <Snackbar
+                open
+                anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+                autoHideDuration={5000}
+                onClose={handleCloseSnackbar}
+              > 
+                <Alert {...snackbar} onClose={handleCloseSnackbar} variant="filled" />
+              </Snackbar>
+            )}
         </Grid>
         </Grid>
             {/* dialog box */}
@@ -318,7 +465,7 @@ export default function StickyHeadTable() {
                             '& .MuiTextField-root': { m: 1, width: '50ch' },
                         }}>
                   <TextField id="poNumber" label="PO Number" onChange={(e)=>handleOnChangeInput("poNumber",e)} variant="outlined" fullWidth/>
-                  <DatePicker label="Date Issued" id="dateIssued" onChange={(e)=>handleOnChangeInput("dateIssued",e)} defaultValue={moment()} />
+                  <DatePicker label="Date Issued" maxDate={moment().add(3,'y')} minDate={moment('2000','YYYY')} id="dateIssued" onChange={(e)=>handleOnChangeInput("dateIssued",e)} defaultValue={moment()} />
                     <Autocomplete
                     disablePortal
                     id="buyer"
@@ -330,7 +477,7 @@ export default function StickyHeadTable() {
                     sx={{ width: 250 }}
                     renderInput={(params) => <TextField {...params} label="Buyer" />}
                     />
-                  <DatePicker label="Ship Date" id="shipDate" onChange={(e)=>handleOnChangeInput("shipDate",e)} defaultValue={moment()} />
+                  <DatePicker label="Ship Date" id="shipDate" maxDate={moment().add(3,'y')} minDate={moment('2000','YYYY')} onChange={(e)=>handleOnChangeInput("shipDate",e)} defaultValue={moment()} />
                   </Box>
                   {/* </Grid>
                </Grid> */}

@@ -1,30 +1,14 @@
 import React,{useState,useEffect} from 'react';
-import AppBar from '@mui/material/AppBar';
-import Box from '@mui/material/Box';
-import Toolbar from '@mui/material/Toolbar';
-import Typography from '@mui/material/Typography';
+import {AppBar,Box,Toolbar,Typography,IconButton,Alert,Snackbar
+  ,MenuItem,Menu,Link,Button,TextField,Dialog,DialogActions,DialogContent,DialogTitle,
+  
+} from '@mui/material/';
+import AccountCircle from '@mui/icons-material/AccountCircle'
+
 import Grid from '@mui/material/Unstable_Grid2';
-import IconButton from '@mui/material/IconButton';
-import MenuIcon from '@mui/icons-material/Menu';
-import AccountCircle from '@mui/icons-material/AccountCircle';
-import Switch from '@mui/material/Switch';
-import FormControlLabel from '@mui/material/FormControlLabel';
-import FormGroup from '@mui/material/FormGroup';
-import MenuItem from '@mui/material/MenuItem';
-import Menu from '@mui/material/Menu';
-import {Link} from '@mui/material';
-import {Navigate} from 'react-router-dom';
-
-import Button from '@mui/material/Button';
-import TextField from '@mui/material/TextField';
-import Dialog from '@mui/material/Dialog';
-import DialogActions from '@mui/material/DialogActions';
-import DialogContent from '@mui/material/DialogContent';
-import DialogContentText from '@mui/material/DialogContentText';
-import DialogTitle from '@mui/material/DialogTitle';
-
-import {useDispatch} from 'react-redux';
+import {useDispatch,useSelector} from 'react-redux';
 import { AUTH_LOGOUT } from '../../../constant/actionTypes';
+import { changePassword } from '../../../actions/auth';
 import { useNavigate,useLocation } from 'react-router';
 import decode from 'jwt-decode';
 
@@ -35,7 +19,31 @@ export default function MenuAppBar() {
   const navigate = useNavigate();
   const location  = useLocation();
 
+  const {isLoading,message} = useSelector(state=> state.auth);
+
   const [user,setUser] = useState(JSON.parse(localStorage.getItem('profile')));
+
+  const[userPass,setUserPass] = useState({
+    oldPassword:null,
+    newPassword:null,
+    retypePassword:null
+  });
+
+  // SNACKBAR
+  const [snackbar, setSnackbar] = useState(null);
+  const handleCloseSnackbar = () => setSnackbar(null);
+
+  useEffect(()=>{
+    //i top here
+    if(!isLoading && message !== null){
+      if(message === 'success'){
+        setSnackbar({ children: `Successfully Change Password`, severity: 'success' });
+        handleCloseDialog();
+      }else if(message === 'incorrect old password'){
+        setSnackbar({ children: `Invalid Current Password`, severity: 'error' });
+      }
+    }
+  },[isLoading,message])
 
   const [anchorEl, setAnchorEl] = React.useState(null);
 
@@ -43,22 +51,21 @@ export default function MenuAppBar() {
     setAnchorEl(event.currentTarget);
   };
 
-  const handleLogout = () =>{
-     dispatch({type: AUTH_LOGOUT});
-     navigate(`/login`);
-     setUser(null);
-  }
+
 
   const handleCloseMenu = () => {
     setAnchorEl(null);
     handleOpenDialog();
   };
 
+  const handleLogout = () =>{
+    dispatch({type: AUTH_LOGOUT});
+    navigate(`/login`);
+    setUser(null);
+  }
 
   useEffect(()=>{
-
     const token = user?.token;
-
     if(token){
       const decodedToken = decode(token);
       if(decodedToken.exp * 1000 < new Date().getTime())
@@ -66,7 +73,6 @@ export default function MenuAppBar() {
     }else{
       handleLogout();
     }
-    console.log(JSON.parse(localStorage.getItem('profile')));
   },[]);
 
   
@@ -80,6 +86,23 @@ export default function MenuAppBar() {
   const handleCloseDialog = () => {
     setOpenDialog(false);
   };
+
+  const handleChangePassword = () =>{
+    if(userPass.newPassword !== userPass.retypePassword)
+      setSnackbar({ children: `Retype password is in correct`, severity: 'error' });
+    else
+      dispatch(changePassword({username:user?.result?.username,
+          oldPassword:userPass.oldPassword,
+          newPassword:userPass.newPassword
+        })); 
+  }
+
+  const onChangePassInput = (name,e) =>{
+    setUserPass({
+      ...userPass,
+      [name]: e.target.value
+    })
+  }
 
   return (
     <Box sx={{ flexGrow: 1 }}>
@@ -118,24 +141,33 @@ export default function MenuAppBar() {
       </AppBar>
 
 {/* dialog box */}
-<Dialog open={openDialog} onClose={handleCloseDialog}>
+    <Dialog open={openDialog} onClose={handleCloseDialog}>
         <DialogTitle>Change Password</DialogTitle>
         <DialogContent>
         <Box component="form" noValidate autoComplete="off"
             sx={{
                 '& .MuiTextField-root': { m: 1, width: '50ch' },
             }}>
-          <TextField id="outlined-basic" label="Old Password" variant="outlined" fullWidth/>
-          <TextField id="outlined-basic" label="New Password" variant="outlined" fullWidth/>
-          <TextField id="outlined-basic" label="Retype Password" variant="outlined" fullWidth/>
+          <TextField id="outlined-basic" onChange={(e) => onChangePassInput("oldPassword",e)} label="Old Password" variant="outlined" fullWidth/>
+          <TextField id="outlined-basic" onChange={(e) => onChangePassInput("newPassword",e)} label="New Password" variant="outlined" fullWidth/>
+          <TextField id="outlined-basic" onChange={(e) => onChangePassInput("retypePassword",e)} label="Retype Password" variant="outlined" fullWidth/>
           </Box>
         </DialogContent>
         <DialogActions>
           <Button onClick={handleCloseDialog} variant="contained" color="warning">Cancel</Button>
-          <Button onClick={handleCloseDialog} variant="contained">Save</Button>
+          <Button onClick={handleChangePassword} variant="contained">Save</Button>
         </DialogActions>
       </Dialog>
-
+        {!!snackbar && (
+            <Snackbar
+              open
+              anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+              autoHideDuration={5000}
+              onClose={handleCloseSnackbar}
+            > 
+              <Alert {...snackbar} onClose={handleCloseSnackbar} variant="filled" />
+            </Snackbar>
+          )}
     </Box>
   );
 }

@@ -21,6 +21,7 @@ import { useParams } from 'react-router';
 import POGrid from './POGrid';
 import { useSelector,useDispatch } from 'react-redux';
 import {getPO,updatePOByAm,updatePOByLogistics} from '../../../actions/purchaseOrders';
+import {getCountOrderItemStatusOpen} from '../../../actions/orderitems';
 import {getBuyers} from '../../../actions/buyers';
 import {getDepartments} from '../../../actions/departments';
 import {getStatus} from '../../../actions/status';
@@ -32,8 +33,11 @@ const PODetails = () =>{
 
     const dispatch = useDispatch();
 
+    const user = JSON.parse(localStorage.getItem('profile'));
+
     const {purchaseOrders,isLoading} = useSelector(state=> state.purchaseOrders); 
     const {buyers,isLoading:buyerLoading} = useSelector(state=> state.buyers);
+    const {isLoading:orderItemLoading,departmentStatus} = useSelector(state=> state.orderItems);
     const {departments,isLoading:departmentLoading} = useSelector(state=> state.departments);
     const {status,isLoading:statusLoading} = useSelector(state=> state.status);
 
@@ -42,7 +46,8 @@ const PODetails = () =>{
         dispatch(getBuyers());
         dispatch(getDepartments());
         dispatch(getStatus());
-        dispatch(getPO(id)); 
+        dispatch(getPO(id));
+        dispatch(getCountOrderItemStatusOpen(id));
    },[dispatch]);
 
     const [input,setInput] = useState({
@@ -59,6 +64,13 @@ const PODetails = () =>{
     const [inputBuyer,setInputBuyer] = useState([]);
     const [inputDepartment,setInputDepartment] = useState([]);
     const [inputStatus,setInputStatus] = useState([]);
+    const [userEdited, setUserEdited] = useState({
+        name:null,
+        date:null,
+        logisticsName:null,
+        logisticsDate:null
+    });
+    const[currentDepartmentStatus,setCurrentDepartmentStatus] = useState(null);
 
     const [snackbar, setSnackbar] = React.useState(null);
     const handleCloseSnackbar = () => setSnackbar(null);
@@ -87,12 +99,26 @@ const PODetails = () =>{
                 logRequiredShipDate:po.logCom.requiredShipDate,
                 logRequestedShipDate:po.logCom.requestedShipDate
             });
-            
+            setUserEdited({
+                ...userEdited,
+                name: po.editedBy,
+                date: po.updatedAt,
+                logisticsName:po.logCom.editedBy,
+                logisticsDate:po.logCom.updatedAt
+            })
+
             setInputBuyer(buyers);
             setInputDepartment(departments);
             setInputStatus(status);
+            
         }
     },[purchaseOrders]);
+
+    useEffect(() => {
+        if(departmentStatus?.department && !orderItemLoading ){
+            setCurrentDepartmentStatus(departmentStatus?.department);
+        }
+    }, [departmentStatus,orderItemLoading]);
 
 
     const handleOnChangeInput = (name,e,val=null) =>{
@@ -114,15 +140,126 @@ const PODetails = () =>{
         }
 
     const handleSaveByAM = () =>{
-        const {dateIssued,buyer,poNumber,shipDate,status,reqAttDepts,remarks} = input;
-        dispatch(updatePOByAm(purchaseOrders[0]?._id,{dateIssued,buyer,poNumber,shipDate,status,reqAttDepts,remarks}));
-        processRowUpdate()
+
+        if(user?.result?.department?.department !== 'AM'){
+            setSnackbar({ children: `This section is only for AM Dept`, severity: 'error' });
+            return;
+        }
+
+
+        const {dateIssued,buyer,poNumber,shipDate,reqAttDepts,status,remarks} = input;
+
+         // trappings
+        // input po number 
+        let flag = true;
+
+        const regexPattern = /^(?=.{1,15}$)[a-zA-Z0-9]*-?[a-zA-Z0-9\s]*$|^(?=.{1,15}$)[a-zA-Z0-9]*$/;
+        if(!regexPattern.test(poNumber)) {
+            console.log(`${poNumber} PO is not a valid string.`);
+            setSnackbar({ children: `PO Number inputed is invalid, `, severity: 'error' });
+            flag = false;
+        }
+
+        // buyer I STOP HERE
+        const findBuyer = inputBuyer.find(buy => buy?._id === buyer?._id);
+        if(findBuyer === undefined || findBuyer === null){
+            console.log(`${buyer} buyer is not a valid string.`);
+            console.log(`${buyer} good`);
+            setSnackbar({ children: `Buyer inputed is invalid`, severity: 'error' });
+            flag = false;
+        }
+        // status I STOP HERE
+        const findStatus = inputStatus.find(sta => sta?._id === status?._id);
+        if(findStatus === undefined || findStatus === null){
+            console.log(`${findStatus} status is not a valid string.`);
+            setSnackbar({ children: `Status inputed is invalid`, severity: 'error' });
+            flag = false;
+        }
+
+        // date cannot be back to history and empty
+        const compDateIssued = moment(dateIssued).isBetween(moment('2000','YYYY'), moment().add(3,'y'));
+        if(!compDateIssued){
+            console.log(`${dateIssued} date is invalid.`);
+            setSnackbar({ children: `DateIssued Inputed is Invalid`, severity: 'error' });
+            flag = false;
+        }
+        const compShipDate = moment(shipDate).isBetween(moment('2000','YYYY'), moment().add(3,'y'));
+        if(!compShipDate){
+            console.log(`${dateIssued} date is invalid.`);
+            setSnackbar({ children: `ShipDate Inputed is Invalid`, severity: 'error' });
+            flag = false;
+        }
+
+        // departments
+         // all set for department
+        
+
+        // remarks
+        const maxLength = 300;
+        const regex = new RegExp(`^[\\s\\S]{0,${maxLength}}$`);
+        if(!regex.test(remarks)){
+            console.log(`${remarks} remarks is not a valid string.`);
+            setSnackbar({ children: ` remarks inputed is invalid, limit only 300 letters`, severity: 'error' });
+            flag = false;
+        }
+
+        //alert(`${user?.result?.firstname} => ${moment().toDate()}`);
+        const newUser = `${user?.result?.firstname} ${user?.result?.lastname}`;
+
+        if(flag){
+            dispatch(updatePOByAm(purchaseOrders[0]?._id,{dateIssued,buyer,poNumber:poNumber.toUpperCase(),shipDate,status,
+                reqAttDepts,remarks,editedBy:newUser}));
+            processRowUpdate()
+        }
     }
 
-    const handleSaveByLogistics = () =>{
+    const handleSaveByLogistics = async () =>{
+        const currentStatus = purchaseOrders[0].status.status;
+        if(currentStatus !== 'OPEN'){
+            setSnackbar({ children: `disable from edit due to status ${currentStatus}`, severity: 'warning' });
+            return;
+        }
+
+        const comDepartment = user?.result?.department?.department;
+        if(comDepartment !== 'LOGISTICS' && comDepartment !== 'AM'){
+            setSnackbar({ children: `This section is only for LOGISTICS Dept`, severity: 'error' });
+            return;
+        }
+
         const {logRequiredShipDate, logRequestedShipDate} = input;
-        dispatch(updatePOByLogistics(purchaseOrders[0]?._id,{logRequiredShipDate,logRequestedShipDate}));
-        processRowUpdate()
+
+         // date cannot be back to history and empty
+        let flag = true;
+
+        if(logRequiredShipDate != null){
+            const compLogRequiredShipDate= moment(logRequiredShipDate).isBetween(moment('2000','YYYY'), moment().add(3,'y'));
+            if(!compLogRequiredShipDate){
+                console.log(`${logRequiredShipDate} date is invalid.`);
+                setSnackbar({ children: `Required ShipDate Inputed is Invalid`, severity: 'error' });
+                flag = false;
+            }
+        }
+        
+        if(logRequestedShipDate != null){
+            const compLogRequestedShipDate = moment(logRequestedShipDate).isBetween(moment('2000','YYYY'), moment().add(3,'y'));
+            if(!compLogRequestedShipDate){
+                console.log(`${logRequestedShipDate} date is invalid.`);
+                setSnackbar({ children: `Requested ShipDate Inputed is Invalid`, severity: 'error' });
+                flag = false;
+            }
+        }
+
+        const newUser = `${user?.result?.firstname} ${user?.result?.lastname}`;
+
+        if(flag){
+            await dispatch(updatePOByLogistics(purchaseOrders[0]?._id,{logRequiredShipDate,logRequestedShipDate,editedBy:newUser}));
+            processRowUpdate()
+            await dispatch(getCountOrderItemStatusOpen(id));
+        }
+
+        //TO DO
+        // check dept status from order item if logs
+        // 
     }
 
     const icon = <CheckBoxOutlineBlankIcon fontSize="small" />;
@@ -154,7 +291,6 @@ const PODetails = () =>{
                     <Grid xs={6} md={12} lg={12}> 
                            <Grid spacing={2} container direction="row" alignItems="flex-end">
                             <Typography variant="h5" sx={{ml:2}}> Account Management </Typography>
-                            {/* <Typography variant="p" color="error" sx={{ml:2}}>Last edit : Elecar Sabinay - 12-23-23 </Typography> */}
                            </Grid>
                         </Grid>
                     <Grid xs={6} md={6} lg={6}>
@@ -162,7 +298,7 @@ const PODetails = () =>{
                         sx={{
                             '& .MuiTextField-root': { m: 1, width: '40ch' },
                         }}>
-                            <DatePicker label="Date Issued" onChange={(e)=>handleOnChangeInput("dateIssued",e)} value={moment(input.dateIssued)}/>
+                            <DatePicker label="Date Issued" maxDate={moment().add(3,'y')} minDate={moment('2000','YYYY')} onChange={(e)=>handleOnChangeInput("dateIssued",e)} value={moment(input.dateIssued)}/>
                             <Autocomplete
                                 disablePortal
                                 id="buyerssId"
@@ -176,7 +312,13 @@ const PODetails = () =>{
                                 renderInput={(params) => <TextField {...params} label="Buyer" />}
                                 />
                             <TextField onChange={(e)=>handleOnChangeInput("poNumber",e)} value={input.poNumber || ''} fullWidth label="PO Number" variant="outlined" />
-                            <DatePicker label="Ship Date" onChange={(e)=>handleOnChangeInput("shipDate",e)} value={moment(input.shipDate)}/>    
+                            <DatePicker label="Ship Date" maxDate={moment().add(3,'y')} minDate={moment('2000','YYYY')} onChange={(e)=>handleOnChangeInput("shipDate",e)} value={moment(input.shipDate)}/>
+
+                           {userEdited.name &&
+                            <Grid sx={{mt:3}}>
+                                <Typography variant="p" color="error">Last edit : {userEdited.name} - {moment(userEdited.date).fromNow()} </Typography>
+                            </Grid>
+                            }
                         </Box>
                     </Grid>
                     <Grid xs={6} md={6} lg={6}>
@@ -251,9 +393,14 @@ const PODetails = () =>{
                             '& .MuiButton-root': { m: 1, width: '40ch' }
                         }}>
                             <Typography variant="h5" sx={{mb:2}}> Logistics </Typography>
-                            <DatePicker label="Required Ship Date" onChange={(e)=>handleOnChangeInput("logRequiredShipDate",e)} value={input.logRequiredShipDate ? moment(input.logRequiredShipDate) : null} />
-                            <DatePicker label="Requested Ship Date" onChange={(e)=>handleOnChangeInput("logRequestedShipDate",e)} value={input.logRequestedShipDate ? moment(input.logRequestedShipDate) : null} /> 
+                            <DatePicker label="Required Ship Date" readOnly value={input.logRequiredShipDate ? moment(input.logRequiredShipDate) : null} />
+                            <DatePicker label="Requested Ship Date" maxDate={moment().add(3,'y')} minDate={moment('2000','YYYY')} onChange={(e)=>handleOnChangeInput("logRequestedShipDate",e)} value={input.logRequestedShipDate ? moment(input.logRequestedShipDate) : null} /> 
                             <Button variant="contained" color="primary" size="large" fullWidth onClick={handleSaveByLogistics}  > Save Changes </Button>
+                            { userEdited?.logisticsName &&
+                            <Grid sx={{mt:3}}>
+                                <Typography variant="p" color="error">Last edit : {userEdited.logisticsName} - {moment(userEdited.logisticsDate).fromNow()} </Typography>
+                            </Grid>
+                            }
                         </Box>
                     </Grid>
                 </Paper>
@@ -273,13 +420,6 @@ const PODetails = () =>{
                         <Alert {...snackbar} onClose={handleCloseSnackbar} variant="filled" />
                     </Snackbar>
                 )}
-                    {/* <Grid container spacing={5} alignItems="center" justifyContent="center">
-                        <Grid sm={6} md={6} lg={6}>
-                            <Stepper/>
-                        </Grid>
-                    </Grid> */}
-
-                {/* <POGrid/> */}
             </div>
         </Box>
     )

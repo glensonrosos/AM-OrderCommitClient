@@ -1,12 +1,13 @@
-import React,{useState} from 'react';
+import React,{useState,useEffect} from 'react';
 import {Avatar,Button,CssBaseline,TextField,FormControlLabel,Checkbox,Link,
-    Paper,Box,Grid,Typography,Badge,Stack} from '@mui/material'
+    Paper,Box,Grid,Typography,Badge,Stack,Alert,Snackbar} from '@mui/material'
 import {LockOutlined} from '@mui/icons-material/';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import PebaImage from '../images/PebaImage.jpeg';
-import {useDispatch} from 'react-redux';
+import {useDispatch,useSelector} from 'react-redux';
 import { useNavigate } from 'react-router';
 import { signIn } from '../../actions/auth';
+import { getReqAttDepts} from '../../actions/purchaseOrders';
 
 
 
@@ -29,6 +30,9 @@ const defaultTheme = createTheme();
 
 export default function SignInSide() {
 
+  const {authData,isLoading} = useSelector(state => state.auth);
+  const {isLoading:isPOLoading,reqAttDepts} = useSelector(state => state.purchaseOrders);
+
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
@@ -36,6 +40,12 @@ export default function SignInSide() {
     username:null,
     password:null
   });
+
+  //snackbar
+  const [snackbar, setSnackbar] = React.useState(null);
+  const handleCloseSnackbar = () => setSnackbar(null);
+
+  const [notReqAttDepts,setNotReqAttDepts] = useState(null);
 
   const onChangeText = (name,e) =>{
     setUser({
@@ -45,12 +55,36 @@ export default function SignInSide() {
   }
 
   const handleSubmit = () => {
+
+    const regexPattern = /^[a-zA-Z0-9]{1,40}$/;
+
+    if (!regexPattern.test(user.username) || !regexPattern.test(user.password)) {
+      setSnackbar({ children: 'Please check your input', severity: 'error' });
+      return;
+    } 
+
     if(user.username && user.password)
-      //dispatch(login(user,history))
-      dispatch(signIn(user,navigate));
+      dispatch(signIn(user));
     else
-      alert('error')
+     setSnackbar({ children: 'Please check your input', severity: 'error' });
   };
+
+  useEffect(() => {
+    if(!isLoading && authData?.message === 'signIn')
+      navigate(`/purchase-order-detail/`);
+    else if(!isLoading && authData?.message === 'error')
+      setSnackbar({ children: 'Invalid Credentials, Please try again', severity: 'error' });
+  }, [isLoading]);
+
+  useEffect(()=>{
+    dispatch(getReqAttDepts());
+  },[dispatch]);
+
+  useEffect(()=>{
+    if(!isPOLoading && reqAttDepts){
+      setNotReqAttDepts(reqAttDepts);
+    }
+  },[isPOLoading,reqAttDepts])
 
   return (
     <ThemeProvider theme={defaultTheme}>
@@ -84,32 +118,32 @@ export default function SignInSide() {
                 direction={{ xs: 'row', sm: 'row' }}
                 spacing={{ xs: 8, sm: 8, md: 8 }} useFlexGap flexWrap="wrap">
                     
-                <Badge color="error" badgeContent={3} sx={{ "& .MuiBadge-badge": { fontSize: 40, height: 45, minWidth: 45, borderRadius:50 } }}>
+                <Badge color="error" badgeContent={notReqAttDepts?.AM} sx={{ "& .MuiBadge-badge": { fontSize: 40, height: 45, minWidth: 45, borderRadius:50 } }}>
                    <Typography variant="h3" >
                        AM
                     </Typography>  
                 </Badge>
-                <Badge color="error" badgeContent={3} sx={{ "& .MuiBadge-badge": { fontSize: 40, height: 45, minWidth: 45, borderRadius:50 } }}>
+                <Badge color="error" badgeContent={notReqAttDepts?.PD} sx={{ "& .MuiBadge-badge": { fontSize: 40, height: 45, minWidth: 45, borderRadius:50 } }}>
                    <Typography variant="h3">
                        PD
                     </Typography>  
                 </Badge>
-                <Badge color="error" badgeContent={3} sx={{ "& .MuiBadge-badge": { fontSize: 40, height: 45, minWidth: 45, borderRadius:50 } }}>
+                <Badge color="error" badgeContent={notReqAttDepts?.PU} sx={{ "& .MuiBadge-badge": { fontSize: 40, height: 45, minWidth: 45, borderRadius:50 } }}>
                    <Typography variant="h3">
                        PURCH
                     </Typography>  
                 </Badge>
-                <Badge color="error" badgeContent={3} sx={{ "& .MuiBadge-badge": { fontSize: 40, height: 45, minWidth: 45, borderRadius:50 } }}>
+                <Badge color="error" badgeContent={notReqAttDepts?.PROD} sx={{ "& .MuiBadge-badge": { fontSize: 40, height: 45, minWidth: 45, borderRadius:50 } }}>
                    <Typography variant="h3" >
                        PROD
                     </Typography>  
                 </Badge>
-                <Badge color="error" badgeContent={3} sx={{ "& .MuiBadge-badge": { fontSize: 40, height: 45, minWidth: 45, borderRadius:50 } }}>
+                <Badge color="error" badgeContent={notReqAttDepts?.QA} sx={{ "& .MuiBadge-badge": { fontSize: 40, height: 45, minWidth: 45, borderRadius:50 } }}>
                    <Typography variant="h3">
                        QA
                     </Typography>  
                 </Badge>
-                <Badge color="error" badgeContent={3} sx={{ "& .MuiBadge-badge": { fontSize: 40, height: 45, minWidth: 45, borderRadius:50 } }}>
+                <Badge color="error" badgeContent={notReqAttDepts?.LOGS} sx={{ "& .MuiBadge-badge": { fontSize: 40, height: 45, minWidth: 45, borderRadius:50 } }}>
                    <Typography variant="h3">
                        LOGS
                     </Typography>  
@@ -129,6 +163,7 @@ export default function SignInSide() {
                 fullWidth
                 id="username"
                 onChange={(e)=>onChangeText('username',e)}
+                onKeyDown={(e)=> e.keyCode === 13 && handleSubmit() }
                 label="Username"
                 autoFocus
               />
@@ -155,6 +190,18 @@ export default function SignInSide() {
             </Box>
           </Box>
         </Grid>
+        <div>
+            {!!snackbar && (
+                <Snackbar
+                    open
+                    anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                    onClose={handleCloseSnackbar}
+                    autoHideDuration={4000}
+                > 
+                    <Alert {...snackbar} onClose={handleCloseSnackbar} variant="filled" />
+                </Snackbar>
+            )}
+        </div>
       </Grid>
     </ThemeProvider>
   );
