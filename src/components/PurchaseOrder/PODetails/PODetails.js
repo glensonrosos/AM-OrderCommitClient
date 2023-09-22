@@ -20,7 +20,7 @@ import { useParams } from 'react-router';
 
 import POGrid from './POGrid';
 import { useSelector,useDispatch } from 'react-redux';
-import {getPO,updatePOByAm,updatePOByLogistics} from '../../../actions/purchaseOrders';
+import {getPO,updatePOByAm,updatePOByLogistics,getPONoLoading} from '../../../actions/purchaseOrders';
 import {getCountOrderItemStatusOpen} from '../../../actions/orderitems';
 import {getBuyers} from '../../../actions/buyers';
 import {getDepartments} from '../../../actions/departments';
@@ -42,6 +42,18 @@ const PODetails = () =>{
     const {status,isLoading:statusLoading} = useSelector(state=> state.status);
 
 
+    // useEffect(() => {
+    //     // Create an interval that reloads the page every 30 seconds
+    //     const intervalId = setInterval(() => {
+    //       window.location.reload();
+    //       console.log('page reload');
+    //     }, 30000); // 30 seconds in milliseconds
+    
+    //     // Clear the interval when the component unmounts
+    //     return () => clearInterval(intervalId);
+    //   }, []);
+
+
     useEffect(()=>{
         dispatch(getBuyers());
         dispatch(getDepartments());
@@ -49,6 +61,19 @@ const PODetails = () =>{
         dispatch(getPO(id));
         dispatch(getCountOrderItemStatusOpen(id));
    },[dispatch]);
+
+
+    // load that will not using loading ui
+    useEffect(() => {
+    // Create an interval that reloads the page every 30 seconds
+    const intervalId = setInterval(() => {
+        dispatch(getPONoLoading(id));
+        dispatch(getCountOrderItemStatusOpen(id));
+        console.log('page po details reload');
+    }, 60000); // 60 seconds in milliseconds
+    // Clear the interval when the component unmounts
+    return () => clearInterval(intervalId);
+    }, [dispatch]);
 
     const [input,setInput] = useState({
         dateIssued:null,

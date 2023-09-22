@@ -31,6 +31,16 @@ export const getReqAttDepts = (page) => async (dispatch) =>{
     }
 }
 
+export const getReqAttDeptsNoLoading = (page) => async (dispatch) =>{
+    try{
+        const {data} = await api.getReqAttDepts();
+        dispatch({type: GET_REQ_ATT_DEPTS,payload:data});
+
+    }catch(error){
+        console.log(error.message);
+    }
+}
+
 export const getPO = (id) => async (dispatch) =>{
     try{
         dispatch({type: START_LOADING_HOME});
@@ -39,6 +49,15 @@ export const getPO = (id) => async (dispatch) =>{
         dispatch({type:GET_PO,payload:data});
         dispatch({type: END_LOADING_HOME});
 
+    }catch(error){
+        console.log(error.message)
+    }
+}
+
+export const getPONoLoading = (id) => async (dispatch) =>{
+    try{
+        const {data} = await api.getPO(id);
+        dispatch({type:GET_PO,payload:data});
     }catch(error){
         console.log(error.message)
     }

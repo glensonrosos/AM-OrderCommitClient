@@ -224,6 +224,16 @@ export default function StickyHeadTable() {
    // alert(`${searchOption} => ${searchValue}`)
   },[dispatch,queryPage,searchOption,queryPage]);
 
+  // CALL EVERY 30 SECONDS
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+        dispatch(getPOs(queryPage));
+        console.log('called getPOs table');
+    }, 30000);
+    return () => clearInterval(intervalId);
+}, [dispatch]);
+
+
   const searchOptions = [
     {id: 'poNumber', label: 'PO #'},
     {id: 'dateIssued', label: 'Date Issued'},

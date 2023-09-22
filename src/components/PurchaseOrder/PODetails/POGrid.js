@@ -9,7 +9,7 @@ import moment from 'moment';
 import FileBase64 from 'react-file-base64';
 
 import { useDispatch,useSelector } from 'react-redux';
-import { getOrderItems,createOrderItem,updateCellOrderItem,getCountOrderItemStatusOpen,deleteOrderItem,getOrderItemImage } from '../../../actions/orderitems';
+import { getOrderItems,getOrderItemsNoLoading,createOrderItem,updateCellOrderItem,getCountOrderItemStatusOpen,deleteOrderItem,getOrderItemImage } from '../../../actions/orderitems';
 import {updateCellEditedBy,updatePOByAuto} from '../../../actions/purchaseOrders';
 import NoImage from '../../images/NoImage.jpeg'
 
@@ -316,9 +316,20 @@ export default function ServerSidePersistence() {
 
   useEffect(() => {
       setDataGridLoading(true);
-      dispatch(getOrderItems(id));
+      dispatch(getOrderItemsNoLoading(id));
       //dispatch(getCountOrderItemStatusOpen(id));
   }, [dispatch]);
+
+  // load that will not using loading ui
+  useEffect(() => {
+    // Create an interval that reloads the page every 30 seconds
+    const intervalId = setInterval(() => {
+        dispatch(getOrderItems(id));
+        console.log('page grid reload');
+    }, 60000); // 60 seconds in milliseconds
+    // Clear the interval when the component unmounts
+    return () => clearInterval(intervalId);
+    }, [dispatch]);
 
   useEffect(()=>{
     if(!isLoading && orderItems && departmentStatus){

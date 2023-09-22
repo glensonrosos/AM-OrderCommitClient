@@ -1,6 +1,6 @@
 import React,{useState,useEffect} from 'react';
 import {Stack,Badge,Link,Typography} from '@mui/material';
-import {getReqAttDepts,getPOBySearch} from '../../../../actions/purchaseOrders';
+import {getReqAttDepts,getReqAttDeptsNoLoading,getPOBySearch} from '../../../../actions/purchaseOrders';
 import { useDispatch,useSelector } from 'react-redux';
 
 const DeptBadge = () =>{
@@ -8,10 +8,19 @@ const DeptBadge = () =>{
     const [notReqAttDepts,setReqAttDepts] = useState();
     const {isLoading,reqAttDepts} = useSelector(state=> state.purchaseOrders);
     const dispatch = useDispatch();
-
+    // ORIGINAL
     useEffect(()=>{
         dispatch(getReqAttDepts());
     },[]);
+
+    // CALL EVERY 60 SECONDS
+    useEffect(() => {
+        const intervalId = setInterval(() => {
+            dispatch(getReqAttDeptsNoLoading());
+            console.log('called getReqAttDepts table');
+        }, 60000);
+        return () => clearInterval(intervalId);
+    }, [dispatch]);
 
     useEffect(()=>{
         if(!isLoading && reqAttDepts)

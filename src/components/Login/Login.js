@@ -7,7 +7,7 @@ import PebaImage from '../images/PebaImage.jpeg';
 import {useDispatch,useSelector} from 'react-redux';
 import { useNavigate } from 'react-router';
 import { signIn } from '../../actions/auth';
-import { getReqAttDepts} from '../../actions/purchaseOrders';
+import { getReqAttDepts,getReqAttDeptsNoLoading} from '../../actions/purchaseOrders';
 
 
 
@@ -15,8 +15,8 @@ function Copyright(props) {
   return (
     <Typography variant="body2" color="text.secondary" align="center" {...props}>
       {'Copyright © '}
-      <Link color="inherit" href="https://www.facebook.com/glenson.rosos">
-        GlensonR
+      <Link color="inherit" href="https://www.facebook.com/photo/?fbid=4352108184856470&set=a.119322791468385">
+        GlensonPinakaGwapo
       </Link>{' '}
       {new Date().getFullYear()}
       {'.'}
@@ -76,9 +76,20 @@ export default function SignInSide() {
       setSnackbar({ children: 'Invalid Credentials, Please try again', severity: 'error' });
   }, [isLoading]);
 
+  // -- ORIGINAL
   useEffect(()=>{
     dispatch(getReqAttDepts());
+    console.log('called getReqAttDepts login')
   },[dispatch]);
+
+  // CALL EVERY 60 SECONDS
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      dispatch(getReqAttDeptsNoLoading());
+      console.log('called getReqAttDepts');
+    }, 60000);
+    return () => clearInterval(intervalId);
+  }, [dispatch]);
 
   useEffect(()=>{
     if(!isPOLoading && reqAttDepts){

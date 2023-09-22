@@ -14,6 +14,17 @@ export const getOrderItems = (id) => async (dispatch) =>{
     }
 }
 
+export const getOrderItemsNoLoading = (id) => async (dispatch) =>{
+    try{
+       
+        const {data} = await api.getOrderItem(id);
+        dispatch({type: GET_ORDER_ITEMS_POID,payload:data});
+        
+    }catch(error){
+        console.log(error.message)
+    }
+}
+
 export const getOrderItemImage = (id) => async (dispatch) =>{
     try{
         dispatch({type:START_LOADING_HOME});

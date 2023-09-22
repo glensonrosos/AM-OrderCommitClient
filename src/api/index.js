@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 //const API = axios.create({baseURL: 'http://localhost:5000/oc'});
-const API = axios.create({baseURL: 'http://192.168.3.146:5000/oc'});
+const API = axios.create({baseURL: 'http://10.0.1.221:5000/oc'});
 
 //PO
 export const getPOs = (page) => API.get(`/purchaseOrders?page=${page}`);
