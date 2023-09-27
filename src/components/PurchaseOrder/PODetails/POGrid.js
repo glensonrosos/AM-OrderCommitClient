@@ -1,6 +1,6 @@
 import React,{useState,useEffect} from 'react';
-import { DataGrid,GridToolbar,GridToolbarExport,GridToolbarContainer } from '@mui/x-data-grid';
-import {Snackbar,Alert,Button,Box,Tooltip,Switch,ImageList,Stack,Backdrop,CircularProgress, Typography} from '@mui/material';
+import { DataGrid,GridToolbarExport,GridToolbarContainer } from '@mui/x-data-grid';
+import {Snackbar,Alert,Button,Box,Tooltip,Switch,ImageList,Stack,Backdrop,CircularProgress, Typography,Select,MenuItem} from '@mui/material';
 import {Delete,Image,Add} from '@mui/icons-material';
 import Grid from '@mui/material/Unstable_Grid2';
 
@@ -44,7 +44,6 @@ export default function ServerSidePersistence() {
   const [currentReqAttDepts, setCurrentReqAttDepts] = useState(null);
   const [currentDeptOpenStatus, setCurrentDeptOpenStatus] = useState(null);
   const [currentLogsDate,setCurrentLogsDate] = useState(null);
-  const [currentRemarks,setCurrentRemarks] = useState(null);
   
   const [imageData,setImageData] = useState({
       rowSelected:null,
@@ -135,6 +134,8 @@ export default function ServerSidePersistence() {
         { field: 'patternReleasing'},
         { field: 'productSpecs'},
         { field: 'packagingSpecs'},
+        { field: 'pdMoldAvailability'}, // glenson added updates
+        { field: 'pdSampleReference'}, //
       ],
     },
     {
@@ -149,6 +150,7 @@ export default function ServerSidePersistence() {
         { field: 'completionArtwork'},
         { field: 'firstPackagingMaterial'},
         { field: 'completionPackagingMaterial'},
+        { field: 'puMoldAvailability'},
       ],
     },
     {
@@ -170,6 +172,7 @@ export default function ServerSidePersistence() {
       renderHeaderGroup: (params) => headerLastEdit('QA','QA Commitment'),
       children: [
         { field: 'poptDate'},
+        { field: 'qaSampleReference'},
         { field: 'psiDate'}
       ],
     }
@@ -296,6 +299,114 @@ export default function ServerSidePersistence() {
     )  
   }
 
+  const RenderPuMoldAvailability = (newRow) => {
+
+    const [value,setValue] = React.useState(newRow.puMoldAvailability);
+
+    const handleChange = (e) => {
+
+      const comDepartment = user?.result?.department?.department;
+      if(comDepartment !== 'PURCHASING' && comDepartment !== 'AM' ){
+          setSnackbar({ children: `Only Purchasing or AM Dept are allow to edit Mold Availability`, severity: 'error' });
+          return;
+      }
+
+      if(currentStatus !== 'OPEN'){
+        setSnackbar({ children: `disable from edit due to status ${currentStatus}`, severity: 'warning' });
+        return;
+      }
+
+      setValue(e.target.value);
+
+      newRow.puMoldAvailability = e.target.value;
+      // AMCOM
+      const newUser = `${user?.result?.firstname} ${user?.result?.lastname}`;
+      const edit = {
+        puCom:{
+          editedBy: newUser,
+          updatedAt: moment(),
+        }
+      }
+     
+      const executeAwait = async () =>{
+        await dispatch(updateCellEditedBy(id,{edit}));
+        await dispatch(updateCellOrderItem(newRow?.id,newRow));
+        await dispatch(getCountOrderItemStatusOpen(id));    
+      }
+      executeAwait();
+
+      setSnackbar({ children: 'Successfully update cell', severity: 'success' });
+    };
+  
+    return(    
+      <Select
+          value={value}
+          autoWidth
+          onChange={(e)=>handleChange(e)}
+          label="Mold Availability"
+        >
+          <MenuItem value={-1}>
+            <em>None</em>
+          </MenuItem>
+          <MenuItem value={1}>Yes</MenuItem>
+          <MenuItem value={0}>No</MenuItem>
+      </Select>
+    )  
+  }
+
+  const RenderQaSampleReference = (newRow) => {
+    const [value,setValue] = React.useState(newRow.qaSampleReference);
+
+    const handleChange = (e) => {
+
+      const comDepartment = user?.result?.department?.department;
+      if(comDepartment !== 'QA' && comDepartment !== 'AM' ){
+          setSnackbar({ children: `Only QA or AM Dept are allow to edit Sample Reference`, severity: 'error' });
+          return;
+      }
+
+      if(currentStatus !== 'OPEN'){
+        setSnackbar({ children: `disable from edit due to status ${currentStatus}`, severity: 'warning' });
+        return;
+      }
+
+      setValue(e.target.value);
+
+      newRow.qaSampleReference = e.target.value;
+      // AMCOM
+      const newUser = `${user?.result?.firstname} ${user?.result?.lastname}`;
+      const edit = {
+        qaCom:{
+          editedBy: newUser,
+          updatedAt: moment(),
+        }
+      }
+     
+      const executeAwait = async () =>{
+        await dispatch(updateCellEditedBy(id,{edit}));
+        await dispatch(updateCellOrderItem(newRow?.id,newRow));
+        await dispatch(getCountOrderItemStatusOpen(id));    
+      }
+      executeAwait();
+
+      setSnackbar({ children: 'Successfully update cell', severity: 'success' });
+    };
+  
+    return(    
+      <Select
+          value={value}
+          autoWidth
+          onChange={(e)=>handleChange(e)}
+        >
+          <MenuItem value={-1}>
+            <em>None</em>
+          </MenuItem>
+          <MenuItem value={1}>Yes</MenuItem>
+          <MenuItem value={0}>No</MenuItem>
+      </Select>
+    )  
+  }
+
 
   const RenderUpload = (rowSelected) =>{
 
@@ -326,10 +437,11 @@ export default function ServerSidePersistence() {
     const intervalId = setInterval(() => {
         dispatch(getOrderItems(id));
         console.log('page grid reload');
-    }, 60000); // 60 seconds in milliseconds
+    }, 180000); // 3 minutes
     // Clear the interval when the component unmounts
     return () => clearInterval(intervalId);
     }, [dispatch]);
+
 
   useEffect(()=>{
     if(!isLoading && orderItems && departmentStatus){
@@ -344,26 +456,10 @@ export default function ServerSidePersistence() {
       });
       setCurrentDeptOpenStatus(departmentStatus);
       console.log(`department status ${JSON.stringify(departmentStatus)}`);
-
     }
   },[orderItems,purchaseOrders,departmentStatus]);
 
-  // to change to CLosed
-  // [
-            //   {"_id":"64c76507789aa6953ef3d741","department":"PD"},
-            //   {"_id":"64c76507789aa6953ef3d744","department":"QA"},
-            //   {"_id":"64c764df789aa6953ef3d740","department":"AM"},
-            //   {"_id":"64c76507789aa6953ef3d742","department":"PURCHASING"},
-            //   {"_id":"64c76507789aa6953ef3d743","department":"PRODUCTION"},
-            //   {"_id":"64c76507789aa6953ef3d745","department":"LOGISTICS"}
-            // ]
 
-            // [
-            //   {"status":"OPEN","_id":"64cb742f6dec3a86e635ce26","color":"error","code":0},
-            //   {"status":"ON HOLD","_id":"64cb742f6dec3a86e635ce27","color":"primary","code":1},
-            //   {"status":"CANCELED","_id":"64cb742f6dec3a86e635ce28","color":"warning","code":2},
-            //   {"status":"CLOSED","_id":"64cb742f6dec3a86e635ce29","color":"success","code":3}
-            // ]
   useEffect(() => {
 
     if(currentDeptOpenStatus?.department === 'PD' && currentStatus === 'OPEN'){
@@ -481,6 +577,22 @@ export default function ServerSidePersistence() {
       valueFormatter: (params) =>(params.value !== null ? moment(params?.value).format('L') : null)
     },
     {
+      field: 'pdMoldAvailability',
+      headerName: 'Mold Availability',
+      type: 'date',
+      width: 95,minWidth: 30, maxWidth: 100,
+      editable: comDepartment === 'AM' || comDepartment === 'PD'? true : false,
+      valueFormatter: (params) =>(params.value !== null ? moment(params?.value).format('L') : null)
+    },
+    {
+      field: 'pdSampleReference',
+      headerName: 'Sample Reference',
+      type: 'date',
+      width: 95,minWidth: 30, maxWidth: 100,
+      editable: comDepartment === 'AM' || comDepartment === 'PD'? true : false,
+      valueFormatter: (params) =>(params.value !== null ? moment(params?.value).format('L') : null)
+    },
+    {
       field: 'firstCarcass',
       headerName: 'First Carcass',
       type: 'date',
@@ -530,6 +642,13 @@ export default function ServerSidePersistence() {
       valueFormatter: (params) =>(params.value !== null ? moment(params?.value).format('L') : null)
     },
     {
+      field: 'puMoldAvailability',
+      headerName: 'Mold Availability',
+      valueFormatter: ({ value }) => value ? `Yes` : `No`,
+      width: 100,minWidth: 30, maxWidth: 100,
+      renderCell: (params) => RenderPuMoldAvailability(params.row),
+    },
+    {
       field: 'carcass',
       headerName: 'Carcass',
       type: 'date',
@@ -570,6 +689,13 @@ export default function ServerSidePersistence() {
       valueFormatter: (params) =>(params.value !== null ? moment(params?.value).format('L') : null)
     },
     {
+      field: 'qaSampleReference',
+      headerName: 'Sample Reference   ',
+      valueFormatter: ({ value }) => value ? `Yes` : `No`,
+      width: 100,minWidth: 30, maxWidth: 100,
+      renderCell: (params) => RenderQaSampleReference(params.row),
+    },
+    {
       field: 'psiDate',
       headerName: 'PSI Date',
       type: 'date',
@@ -606,17 +732,21 @@ export default function ServerSidePersistence() {
       patternReleasing: null,
       productSpecs: null,
       packagingSpecs: null,
+      pdMoldAvailability: null,
+      pdSampleReference: null,
       firstCarcass: null,
       completionCarcass: null,
       firstArtwork: null,
       completionArtwork: null,
       firstPackagingMaterial: null,
       completionPackagingMaterial: null,
+      puMoldAvailability: -1,
       carcass: null,
       artwork: null,
       packagingMaterial: null,
       crd: null,
       poptDate: null,
+      qaSampleReference: -1,
       psiDate: null
     }
 

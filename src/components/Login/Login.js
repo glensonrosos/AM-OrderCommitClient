@@ -130,34 +130,22 @@ export default function SignInSide() {
                 spacing={{ xs: 8, sm: 8, md: 8 }} useFlexGap flexWrap="wrap">
                     
                 <Badge color="error" badgeContent={notReqAttDepts?.AM} sx={{ "& .MuiBadge-badge": { fontSize: 40, height: 45, minWidth: 45, borderRadius:50 } }}>
-                   <Typography variant="h3" >
-                       AM
-                    </Typography>  
+                    <Link href="/am" variant="h3" >AM</Link>  
                 </Badge>
                 <Badge color="error" badgeContent={notReqAttDepts?.PD} sx={{ "& .MuiBadge-badge": { fontSize: 40, height: 45, minWidth: 45, borderRadius:50 } }}>
-                   <Typography variant="h3">
-                       PD
-                    </Typography>  
+                  <Link href="/pd" variant="h3" >PD</Link>    
                 </Badge>
                 <Badge color="error" badgeContent={notReqAttDepts?.PU} sx={{ "& .MuiBadge-badge": { fontSize: 40, height: 45, minWidth: 45, borderRadius:50 } }}>
-                   <Typography variant="h3">
-                       PURCH
-                    </Typography>  
+                  <Link href="/purchasing" variant="h3" >PURCH</Link>   
                 </Badge>
                 <Badge color="error" badgeContent={notReqAttDepts?.PROD} sx={{ "& .MuiBadge-badge": { fontSize: 40, height: 45, minWidth: 45, borderRadius:50 } }}>
-                   <Typography variant="h3" >
-                       PROD
-                    </Typography>  
+                  <Link href="/production" variant="h3" >PROD</Link>   
                 </Badge>
                 <Badge color="error" badgeContent={notReqAttDepts?.QA} sx={{ "& .MuiBadge-badge": { fontSize: 40, height: 45, minWidth: 45, borderRadius:50 } }}>
-                   <Typography variant="h3">
-                       QA
-                    </Typography>  
+                  <Link href="/qa" variant="h3" >QA</Link>    
                 </Badge>
                 <Badge color="error" badgeContent={notReqAttDepts?.LOGS} sx={{ "& .MuiBadge-badge": { fontSize: 40, height: 45, minWidth: 45, borderRadius:50 } }}>
-                   <Typography variant="h3">
-                       LOGS
-                    </Typography>  
+                  <Link href="/logistics" variant="h3" >LOGS</Link>   
                 </Badge>
             </Stack>
             <Avatar sx={{ m: 1, bgcolor: 'secondary.main',mt:5 }}>

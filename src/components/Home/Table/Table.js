@@ -229,7 +229,7 @@ export default function StickyHeadTable() {
     const intervalId = setInterval(() => {
         dispatch(getPOs(queryPage));
         console.log('called getPOs table');
-    }, 30000);
+    }, 180000); // 3 minutes
     return () => clearInterval(intervalId);
 }, [dispatch]);
 

@@ -18,7 +18,7 @@ const DeptBadge = () =>{
         const intervalId = setInterval(() => {
             dispatch(getReqAttDeptsNoLoading());
             console.log('called getReqAttDepts table');
-        }, 60000);
+        }, 180000); // 3 minutes
         return () => clearInterval(intervalId);
     }, [dispatch]);
 
