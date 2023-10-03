@@ -29,7 +29,7 @@ const useStyles = makeStyles((theme) => ({
     fontSize: '3rem',
     marginBottom: 0,
     color: '#fff',
-    textShadow: '2px 2px #FF0000'
+    textShadow: '3px 3px #FF0000'
   },
   button: {
     fontSize: '1.5rem',
@@ -44,52 +44,50 @@ const useStyles = makeStyles((theme) => ({
 
 
 function AudioPlayer() {
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [intervalId, setIntervalId] = useState(null);
+  const [intervalId0, setIntervalId0] = useState(null);
+  const [intervalId1, setIntervalId1] = useState(null);
+  const [messages, setMessages] = useState(['Alarm Yow! Ayooo', 'Message!', 'Wazzup Braa! Tagda sab ko uy']);
+  const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
+
   const audioRef = useRef(null);
   const classes = useStyles();
   const navigate = useNavigate();
 
   const stopInterval = () => {
-    clearInterval(intervalId);
-    document.title = 'React App';
-    audioRef.current.pause();
-    audioRef.current.currentTime = 0;
-    setIntervalId(null);
+    if (intervalId0) {
+      //clearInterval(intervalId0);
+      document.title = 'React App';
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+      stopInterval1(); // title tag interval stop
+     // setIntervalId0(null);
+    }
   };
 
   const playAudio = () => {
     audioRef.current.play();
+    document.title = 'Alarm yow!';
+    startInterval1(); // title tag interval start
   };
-
-  useEffect(() => {
-    // Cleanup when the component unmounts
-    return () => {
-      if (intervalId) {
-        clearInterval(intervalId);
-      }
-    };
-  }, [intervalId]);
-
-
-
 
   // GLENSON
   const [notReqAttDepts,setReqAttDepts] = useState();
-    const {isLoading,reqAttDepts} = useSelector(state=> state.purchaseOrders);
-    const dispatch = useDispatch();
+  const {isLoading,reqAttDepts} = useSelector(state=> state.purchaseOrders);
+  const dispatch = useDispatch();
     // ORIGINAL
-    useEffect(()=>{
-        dispatch(getReqAttDepts());
-    },[]);
 
-    // CALL EVERY 60 SECONDS
     useEffect(() => {
-        const id = setInterval(() => {
-          dispatch(getReqAttDeptsNoLoading());
-          console.log('called getReqAttDepts table');
-        }, 60000); // 15 seconds - ALARM
-        setIntervalId(id);
+      
+      const id = setInterval(() => {
+        dispatch(getReqAttDepts());
+        console.log('called getReqAttDepts table');
+      },300000); // 5 minutes
+      
+      setIntervalId0(id);
+
+      return () => {
+        clearInterval(id);
+      };
 
     }, [dispatch]);
 
@@ -98,14 +96,39 @@ function AudioPlayer() {
             setReqAttDepts(reqAttDepts);
             if(reqAttDepts?.LOGS > 0){
               playAudio();
-              document.title = 'Alarm yow!';
-            }else{
-              stopInterval();
             }
           }
     },[isLoading,reqAttDepts]);
 
   //GLENSON
+
+
+  const startInterval1 = () => {
+    if (!intervalId1) {
+      const id = setInterval(() => {
+        console.log('Interval 1 ticked');
+        setCurrentMessageIndex((prevIndex) => (prevIndex + 1) % messages.length);
+      }, 1000);
+      setIntervalId1(id);
+    }
+  };
+
+  const stopInterval1 = () => {
+    if (intervalId1) {
+      clearInterval(intervalId1);
+      setIntervalId1(null);
+      console.log('Interval 1 stopped');
+    }
+  };
+
+  useEffect(() => {
+    document.title = `${messages[currentMessageIndex]}`;
+    if(intervalId1 == null)
+      document.title = 'React App';
+    return () => {
+      document.title = 'React App'; // Reset the title to a default value
+    };
+  }, [currentMessageIndex, messages]);
 
   
 

@@ -7,6 +7,7 @@ import Grid from '@mui/material/Unstable_Grid2';
 import { useParams } from 'react-router';
 import moment from 'moment';
 import FileBase64 from 'react-file-base64';
+import {triggerBase64Download} from 'react-base64-downloader';
 
 import { useDispatch,useSelector } from 'react-redux';
 import { getOrderItems,getOrderItemsNoLoading,createOrderItem,updateCellOrderItem,getCountOrderItemStatusOpen,deleteOrderItem,getOrderItemImage } from '../../../actions/orderitems';
@@ -85,15 +86,15 @@ export default function ServerSidePersistence() {
     const po = purchaseOrders?.find(po => po._id === id);
     let dept=null;
 
-    if(name == 'AM')
+    if(name === 'AM')
       dept = po?.amCom;
-    if(name == 'PD')
+    if(name === 'PD')
       dept = po?.pdCom;
-    if(name == 'PU')
+    if(name === 'PU')
       dept = po?.puCom;
-    if(name == 'PROD')
+    if(name === 'PROD')
       dept = po?.prodCom;
-    if(name == 'QA')
+    if(name === 'QA')
       dept = po?.qaCom;
           
     return (
@@ -437,7 +438,7 @@ export default function ServerSidePersistence() {
     const intervalId = setInterval(() => {
         dispatch(getOrderItems(id));
         console.log('page grid reload');
-    }, 180000); // 3 minutes
+    }, 300000); // 5 minutes
     // Clear the interval when the component unmounts
     return () => clearInterval(intervalId);
     }, [dispatch]);
@@ -463,32 +464,28 @@ export default function ServerSidePersistence() {
   useEffect(() => {
 
     if(currentDeptOpenStatus?.department === 'PD' && currentStatus === 'OPEN'){
-      if(-1 == currentReqAttDepts.findIndex(dept => dept.department === 'PD'))
+      if(-1 === currentReqAttDepts.findIndex(dept => dept.department === 'PD'))
           dispatch(updatePOByAuto(id,{
           status:{status:"OPEN",_id:"64cb742f6dec3a86e635ce26",color:"error",code:0},
-          reqAttDepts:[{"_id":"64c76507789aa6953ef3d741","department":"PD"}],
-          remarks:""}));
+          reqAttDepts:[{"_id":"64c76507789aa6953ef3d741","department":"PD"}],}));
     }
     if(currentDeptOpenStatus?.department === 'PU' && currentStatus === 'OPEN'){
-      if(-1 == currentReqAttDepts.findIndex(dept => dept.department === 'PURCHASING'))
+      if(-1 === currentReqAttDepts.findIndex(dept => dept.department === 'PURCHASING'))
           dispatch(updatePOByAuto(id,{
           status:{status:"OPEN",_id:"64cb742f6dec3a86e635ce26",color:"error",code:0},
-          reqAttDepts:[{"_id":"64c76507789aa6953ef3d742","department":"PURCHASING"}],
-          remarks:""})); 
+          reqAttDepts:[{"_id":"64c76507789aa6953ef3d742","department":"PURCHASING"}],})); 
     }
     if(currentDeptOpenStatus?.department === 'PROD' && currentStatus === 'OPEN'){
-      if(-1 == currentReqAttDepts.findIndex(dept => dept.department === 'PRODUCTION'))
+      if(-1 === currentReqAttDepts.findIndex(dept => dept.department === 'PRODUCTION'))
       dispatch(updatePOByAuto(id,{
       status:{status:"OPEN",_id:"64cb742f6dec3a86e635ce26",color:"error",code:0},
-      reqAttDepts:[{"_id":"64c76507789aa6953ef3d743","department":"PRODUCTION"}],
-      remarks:""})); 
+      reqAttDepts:[{"_id":"64c76507789aa6953ef3d743","department":"PRODUCTION"}],})); 
     }
     if(currentDeptOpenStatus?.department === 'QA' && currentStatus === 'OPEN'){
-      if(-1 == currentReqAttDepts.findIndex(dept => dept.department === 'QA'))
+      if(-1 === currentReqAttDepts.findIndex(dept => dept.department === 'QA'))
       dispatch(updatePOByAuto(id,{
       status:{status:"OPEN",_id:"64cb742f6dec3a86e635ce26",color:"error",code:0},
-      reqAttDepts:[{"_id":"64c76507789aa6953ef3d744","department":"QA"}],
-      remarks:""})); 
+      reqAttDepts:[{"_id":"64c76507789aa6953ef3d744","department":"QA"}],})); 
     }
 
     if(currentDeptOpenStatus?.department === 'LOGS' && currentStatus === 'OPEN' && rows.length > 0){
@@ -496,13 +493,11 @@ export default function ServerSidePersistence() {
           
           dispatch(updatePOByAuto(id,{
             status:{status:"OPEN",_id:"64cb742f6dec3a86e635ce26",color:"error",code:0},
-            reqAttDepts:[{_id:"64c764df789aa6953ef3d740",department:"AM"}],
-            remarks:""}));
+            reqAttDepts:[{_id:"64c764df789aa6953ef3d740",department:"AM"}],}));
         }else{
           dispatch(updatePOByAuto(id,{
             status:{status:"OPEN",_id:"64cb742f6dec3a86e635ce26",color:"error",code:0},
-            reqAttDepts:[{"_id":"64c76507789aa6953ef3d745","department":"LOGISTICS"}],
-            remarks:""}));
+            reqAttDepts:[{"_id":"64c76507789aa6953ef3d745","department":"LOGISTICS"}],}));
         }
     }
   },[currentDeptOpenStatus]);
@@ -767,6 +762,84 @@ export default function ServerSidePersistence() {
         return oldRow;
       }
 
+      // disable edit once user inputed a value
+      if(comDepartment !== 'AM'){
+          // AM
+          if(oldRow.patternReleasing !== null && newRow.patternReleasing !== oldRow.patternReleasing){
+            alert('update is prohibited, please contact AM department to delete the date inputed');
+            return oldRow;
+          }
+          if(oldRow.productSpecs !== null && newRow.productSpecs !== oldRow.productSpecs){
+            alert('update is prohibited, please contact AM department to delete the date inputed');
+            return oldRow;
+          }
+          if(oldRow.packagingSpecs !== null && newRow.packagingSpecs !== oldRow.packagingSpecs){
+            alert('update is prohibited, please contact AM department to delete the date inputed');
+            return oldRow;
+          }
+          if(oldRow.pdMoldAvailability !== null && newRow.pdMoldAvailability !== oldRow.pdMoldAvailability){
+            alert('update is prohibited, please contact AM department to delete the date inputed');
+            return oldRow;
+          }
+          if(oldRow.pdSampleReference !== null && newRow.pdSampleReference !== oldRow.pdSampleReference){
+            alert('update is prohibited, please contact AM department to delete the date inputed');
+            return oldRow;
+          }
+          // PU
+          if(oldRow.firstCarcass !== null && newRow.firstCarcass !== oldRow.firstCarcass){
+            alert('update is prohibited, please contact AM department to delete the date inputed');
+            return oldRow;
+          }
+          if(oldRow.completionCarcass !== null && newRow.completionCarcass !== oldRow.completionCarcass){
+            alert('update is prohibited, please contact AM department to delete the date inputed');
+            return oldRow;
+          }
+          if(oldRow.firstArtwork !== null && newRow.firstArtwork !== oldRow.firstArtwork){
+            alert('update is prohibited, please contact AM department to delete the date inputed');
+            return oldRow;
+          }
+          if(oldRow.completionArtwork !== null && newRow.completionArtwork !== oldRow.completionArtwork){
+            alert('update is prohibited, please contact AM department to delete the date inputed');
+            return oldRow;
+          }
+          if(oldRow.firstPackagingMaterial !== null && newRow.firstPackagingMaterial !== oldRow.firstPackagingMaterial){
+            alert('update is prohibited, please contact AM department to delete the date inputed');
+            return oldRow;
+          }
+          if(oldRow.completionPackagingMaterial !== null && newRow.completionPackagingMaterial !== oldRow.completionPackagingMaterial){
+            alert('update is prohibited, please contact AM department to delete the date inputed');
+            return oldRow;
+          }
+          // PROD
+          if(oldRow.carcass !== null && newRow.carcass !== oldRow.carcass){
+            alert('update is prohibited, please contact AM department to delete the date inputed');
+            return oldRow;
+          }
+          if(oldRow.artwork !== null && newRow.artwork !== oldRow.artwork){
+            alert('update is prohibited, please contact AM department to delete the date inputed');
+            return oldRow;
+          }
+          if(oldRow.packagingMaterial !== null && newRow.packagingMaterial !== oldRow.packagingMaterial){
+            alert('update is prohibited, please contact AM department to delete the date inputed');
+            return oldRow;
+          }
+          if(oldRow.crd !== null && newRow.crd !== oldRow.crd){
+            alert('update is prohibited, please contact AM department to delete the date inputed');
+            return oldRow;
+          }
+          //QA
+          if(oldRow.poptDate !== null && newRow.poptDate !== oldRow.poptDate){
+            alert('update is prohibited, please contact AM department to delete the date inputed');
+            return oldRow;
+          }
+          if(oldRow.psiDate !== null && newRow.psiDate !== oldRow.psiDate){
+            alert('update is prohibited, please contact AM department to delete the date inputed');
+            return oldRow;
+          }
+      }
+      
+      // disable edit once user inputed a value
+
       const regexPattern = /^(?=.{1,15}$)[a-zA-Z0-9]*-?[a-zA-Z0-9\s]*$|^(?=.{1,15}$)[a-zA-Z0-9]*$/;
         // for FIRST ORDER
         if(!newRow.firstOrder && (newRow.patternReleasing !== oldRow.patternReleasing ||
@@ -840,10 +913,10 @@ export default function ServerSidePersistence() {
           setSnackbar({ children: `Invalid Date, `, severity: 'error' });
           return oldRow;
         }
-        if(moment(newRow.crd) <= moment(currentPO.dateIssued) || moment(newRow.crd) >= moment(currentPO.shipDate)){
-          setSnackbar({ children: `Invalid Date, `, severity: 'error' });
-          return oldRow;
-        }
+        // if(moment(newRow.crd) <= moment(currentPO.dateIssued) || moment(newRow.crd) >= moment(currentPO.shipDate)){
+        //   setSnackbar({ children: `Invalid Date, `, severity: 'error' });
+        //   return oldRow;
+        // }
         // PROD-COM
         const newUser = `${user?.result?.firstname} ${user?.result?.lastname}`;
         const edit = {
@@ -856,7 +929,11 @@ export default function ServerSidePersistence() {
         //
       }
       else if(oldRow.poptDate !== newRow.poptDate || oldRow.psiDate !== newRow.psiDate){
-        if(moment(newRow.poptDate) <= moment(currentPO.dateIssued) || moment(newRow.poptDate) >= moment(currentPO.shipDate)){
+        // if(moment(newRow.poptDate) <= moment(currentPO.dateIssued) || moment(newRow.poptDate) >= moment(currentPO.shipDate)){
+        //   setSnackbar({ children: `Invalid Date, `, severity: 'error' });
+        //   return oldRow;
+        // }
+        if(moment(newRow.psiDate) <= moment(currentPO.dateIssued) || moment(newRow.psiDate) >= moment(currentPO.shipDate)){
           setSnackbar({ children: `Invalid Date, `, severity: 'error' });
           return oldRow;
         }
@@ -919,9 +996,6 @@ export default function ServerSidePersistence() {
       //
       await dispatch(updateCellOrderItem(oldRow.id,newRow));
 
-      // if(newRow.itemCode !== null && newRow.description !== null && newRow.qty > 0){
-      //   await dispatch(getCountOrderItemStatusOpen(id));
-      // }
       await dispatch(getCountOrderItemStatusOpen(id));
 
       setSnackbar({ children: 'Successfully update cell', severity: 'success' });
@@ -971,7 +1045,8 @@ export default function ServerSidePersistence() {
       alert('error')
     }
   }
-  
+
+ 
 
   return (
     // <div style={{ height: 400, width: '100%' }}>
@@ -990,7 +1065,6 @@ export default function ServerSidePersistence() {
         </Stack>
         </Box>
         <Box sx={{ maxHeight: 600, width: '100%',mt:1 }}>
-        
         <DataGrid
           rows={rows}
           columns={columns}
@@ -1007,14 +1081,12 @@ export default function ServerSidePersistence() {
           }}
           density="standard"
           
-          // getRowClassName={(params) => {
-          //   return params.row.itemCode === 'MFP1553CHA' ? "highlight" : "";
-          // }}
-
           getCellClassName={(params)=>{
             return params.field === "patternReleasing"
             || params.field === "productSpecs"  
             || params.field === "packagingSpecs"
+            || params.field === "pdMoldAvailability"
+            || params.field === "pdSampleReference"
             || params.field === "carcass"
             || params.field === "artwork"
             || params.field === "packagingMaterial"
@@ -1066,9 +1138,9 @@ export default function ServerSidePersistence() {
         <Dialog open={openDialog} onClose={handleCloseDialog}>
             <DialogTitle>{imageData?.rowSelected?.itemCode}</DialogTitle>
             <DialogContent>
-              <ImageList sx={{ width: 400, height: 400 }}>
+              <ImageList sx={{ width: 410, height: 410 }}>
                  <img 
-                  src={imageData.image}
+                  src={imageData?.image}
                   width={400}
                   height={400}
                   loading="lazy"
@@ -1097,6 +1169,17 @@ export default function ServerSidePersistence() {
             </DialogContent>
             <DialogActions>
               <Button onClick={handleCloseDialog} variant="contained" color="warning">Cancel</Button>
+              {imageData?.rowSelected?.itemCode != null ? 
+                <Button onClick={()=>{
+                  if(imageData?.image === NoImage){
+                    alert('No Image to Download')
+                  }else{
+                    triggerBase64Download(imageData?.image, imageData?.rowSelected?.itemCode)
+                  }
+                }}
+                  variant="contained" color="error">
+                    DOWNLOAD 
+              </Button>: null}
               <Button onClick={handleUploadImage} variant="contained">Upload Image</Button>
             </DialogActions>
           </Dialog>

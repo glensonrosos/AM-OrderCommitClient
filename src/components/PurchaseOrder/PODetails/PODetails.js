@@ -153,7 +153,25 @@ const PODetails = () =>{
         }
 
     const handleSaveByAM = () =>{
+        const po = purchaseOrders[0];
+        const currentStatus = purchaseOrders[0].status.status;
 
+        // only status can edit when status is closed
+        if(currentStatus !== 'OPEN'){
+            if(po.buyer !== input.buyer || po.dateIssued !== input.dateIssued || po.poNumber !== input.poNumber ||
+                po.shipDate !== input.shipDate || po.reqAttDepts !== input.reqAttDepts || po.remarks !== input.remarks){
+                setSnackbar({ children: `disable from edit due to status ${currentStatus}`, severity: 'warning' });
+                return;
+            }
+        }
+        // only status can edit when status is closed
+        if(po.buyer === input.buyer && po.dateIssued === input.dateIssued && po.poNumber === input.poNumber &&
+            po.shipDate !== input.shipDate && po.reqAttDepts !== input.reqAttDepts && po.remarks !== input.remarks &&
+            po.status !== input.status){
+            setSnackbar({ children: `no changes made`, severity: 'warning' });
+            return;
+        }
+        
         if(user?.result?.department?.department !== 'AM'){
             setSnackbar({ children: `This section is only for AM Dept`, severity: 'error' });
             return;
@@ -228,18 +246,36 @@ const PODetails = () =>{
 
     const handleSaveByLogistics = async () =>{
         const currentStatus = purchaseOrders[0].status.status;
+        const comDepartment = user?.result?.department?.department;
+
         if(currentStatus !== 'OPEN'){
             setSnackbar({ children: `disable from edit due to status ${currentStatus}`, severity: 'warning' });
             return;
         }
+        const po = purchaseOrders[0];
 
-        const comDepartment = user?.result?.department?.department;
+        // once edited by user, update is disabled
+        if(comDepartment !== 'AM'){
+            if(po.logCom.requestedShipDate !== null){
+                alert('update is prohibited, please contact AM department to delete the date inputed');
+                return;
+            }
+        }
+        // once edited by user, update is disabled
+        const {logRequiredShipDate, logRequestedShipDate} = input;
+        // invalid date
+        if(moment(logRequestedShipDate) <= moment(logRequiredShipDate)){
+            setSnackbar({ children: `Invalid Date, `, severity: 'error' });
+            return;
+        }
+        // invalid date
+
+
         if(comDepartment !== 'LOGISTICS' && comDepartment !== 'AM'){
             setSnackbar({ children: `This section is only for LOGISTICS Dept`, severity: 'error' });
             return;
         }
 
-        const {logRequiredShipDate, logRequestedShipDate} = input;
 
          // date cannot be back to history and empty
         let flag = true;

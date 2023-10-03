@@ -45,7 +45,7 @@ const DeptBadge = () =>{
                 <Link href="/purchase-orders/search?option=reqAttDepts&value=QA&page=1" variant="h5" >QA</Link>  
             </Badge>
             <Badge color="error" badgeContent={notReqAttDepts?.LOGS} sx={{ "& .MuiBadge-badge": { fontSize: 15, height: 20, minWidth: 25, borderRadius:50 } }}>
-                <Link href="/purchase-orders/search?option=reqAttDepts&value=LOGISCTICS&page=1" variant="h5" >LOGS</Link>  
+                <Link href="/purchase-orders/search?option=reqAttDepts&value=LOGISTICS&page=1" variant="h5" >LOGS</Link>  
             </Badge>
         </Stack>
     )

@@ -87,7 +87,7 @@ export default function SignInSide() {
     const intervalId = setInterval(() => {
       dispatch(getReqAttDeptsNoLoading());
       console.log('called getReqAttDepts');
-    }, 60000);
+    }, 900000); // 15 minutes timeout
     return () => clearInterval(intervalId);
   }, [dispatch]);
 
