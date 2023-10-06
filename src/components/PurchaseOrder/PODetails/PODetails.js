@@ -156,6 +156,15 @@ const PODetails = () =>{
         const po = purchaseOrders[0];
         const currentStatus = purchaseOrders[0].status.status;
 
+        // no changes
+        if(moment(po.dateIssued).format('L') === moment(input.dateIssued).format('L') && po.buyer.buyer === input.buyer.buyer && po.poNumber === input.poNumber &&
+            moment(po.shipDate).format('L') === moment(input.shipDate).format('L') && po.status.status === input.status.status && 
+            po.reqAttDepts === input.reqAttDepts && po.remarks === input.remarks){
+            setSnackbar({ children: `No changes made`, severity: 'warning' });
+            return;
+        }
+        // no changes
+
         // only status can edit when status is closed
         if(currentStatus !== 'OPEN'){
             if(po.buyer !== input.buyer || po.dateIssued !== input.dateIssued || po.poNumber !== input.poNumber ||
@@ -221,6 +230,13 @@ const PODetails = () =>{
             flag = false;
         }
 
+        if(moment(dateIssued) >= moment(shipDate)){
+            setSnackbar({ children: `ShipDate Inputed is must greater than to Date Issued`, severity: 'error' });
+            flag = false;
+        }
+
+        
+
         // departments
          // all set for department
         
@@ -253,6 +269,13 @@ const PODetails = () =>{
             return;
         }
         const po = purchaseOrders[0];
+
+        // no changes
+        if(moment(po.logCom.requestedShipDate).format('L') === moment(input.logRequestedShipDate).format('L')){
+            setSnackbar({ children: `No Changes made`, severity: 'warning' });
+            return;
+        }
+        // no changes
 
         // once edited by user, update is disabled
         if(comDepartment !== 'AM'){

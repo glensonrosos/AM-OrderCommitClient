@@ -182,6 +182,11 @@ export default function StickyHeadTable() {
       setSnackbar({ children: `ShipDate Inputed is Invalid`, severity: 'error' });
       flag = false;
     }
+
+    if(moment(input.shipDate) <= moment(input.dateIssued)){
+      setSnackbar({ children: `Invalid Date, `, severity: 'error' });
+      flag = false;
+    }
     
     const user = JSON.parse(localStorage.getItem('profile'));
 

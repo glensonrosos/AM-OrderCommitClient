@@ -4,6 +4,9 @@ import {Snackbar,Alert,Button,Box,Tooltip,Switch,ImageList,Stack,Backdrop,Circul
 import {Delete,Image,Add} from '@mui/icons-material';
 import Grid from '@mui/material/Unstable_Grid2';
 
+// xlsx
+import * as XLSX from 'xlsx';
+
 import { useParams } from 'react-router';
 import moment from 'moment';
 import FileBase64 from 'react-file-base64';
@@ -300,6 +303,153 @@ export default function ServerSidePersistence() {
     )  
   }
 
+  
+
+  const exportToExcel = () => {
+
+    setDataGridLoading(true);
+
+    console.log(currentPO);
+
+    const data = {
+      columns: [
+        { field: 'poNumber', header: 'Po Number' },
+        { field: 'buyer', header: 'Buyer' },
+        { field: 'dateIssued', header: 'Date Issued', type: 'date' },
+        { field: 'shipDate', header: 'Ship Date',type: 'date' },
+        { field: 'requestedShipDate', header: 'LOGS Requested Ship Date',type: 'date'},
+      ],
+      rows: [
+        {
+          ...currentPO,
+          buyer: currentPO.buyer.buyer,
+          shipDate: moment(currentPO.shipDate).format('L'),
+          dateIssued: moment(currentPO.dateIssued).format('L'),
+          requiredShipDate: moment(currentPO.logCom.requiredShipDate).format('L'),
+          requestedShipDate: moment(currentPO.logCom.requestedShipDate).format('L')
+        }
+      ],
+    };
+
+    const data2 = {
+      columns: [
+        { field: 'itemCode', header: 'Item Code' },
+        { field: 'description', header: 'Description' },
+        { field: 'qty', header: 'Qty' },
+        { field: 'firstOrder', header: 'First Order' },
+        { field: 'patternReleasing', header: 'PD Pattern Releasing', type: 'date'},
+        { field: 'productSpecs', header: 'PD Product Specs', type: 'date'},
+        { field: 'packagingSpecs', header: 'PD Packaging Specs', type: 'date'},
+        { field: 'pdMoldAvailability', header: 'PD Mold Availability', type: 'date'},
+        { field: 'pdSampleReference', header: 'PD Sample Reference', type: 'date'},
+        { field: 'firstCarcass', header: 'PU First Carcass', type: 'date'},
+        { field: 'completionCarcass', header: 'PU Completion Carcass', type: 'date'},
+        { field: 'firstArtwork', header: 'PU First Artwork', type: 'date'},
+        { field: 'completionArtwork', header: 'PU Completion Artwork', type: 'date'},
+        { field: 'firstPackagingMaterial', header: 'PU First Packaging Material', type: 'date'},
+        { field: 'completionPackagingMaterial', header: 'PU Completion Packaging Material', type: 'date'},
+        { field: 'puMoldAvailability', header: 'PU Mold Availability'},
+        { field: 'carcass', header: 'PROD Carcass', type: 'date'},
+        { field: 'artwork', header: 'PROD Artwork', type: 'date'},
+        { field: 'packagingMaterial', header: 'PROD Packaging Material', type: 'date'},
+        { field: 'crd', header: 'PROD CRD', type: 'date'},
+        { field: 'poptDate', header: 'QA POPT Date', type: 'date'},
+        { field: 'qaSampleReference', header: 'QA Sample Reference'},
+        { field: 'psiDate', header: 'QA PSI Date', type: 'date'},
+      ],
+      rows: orderItems.map(order=>{
+
+        let puMoldAvail = 'None';
+        let qaSampleRef = 'None';
+
+        if(order.puMoldAvailability === 1) 
+          puMoldAvail = 'Yes'
+        else if(order.puMoldAvailability === 0)
+          puMoldAvail = 'No'
+
+        if(order.qaSampleRef === 1)
+          qaSampleRef = 'Yes'
+        else if(order.qaSampleRef === 0)
+          qaSampleRef ='No';
+
+        return{
+          ...order,
+          firstOrder: order.firstOrder ? 'YES' : 'NO',
+          patternReleasing: moment(order.patternReleasing).format('L'),
+          productSpecs: moment(order.productSpecs).format('L'),
+          packagingSpecs: moment(order.packagingSpecs).format('L'),
+          pdMoldAvailability: moment(order.pdMoldAvailability).format('L'),
+          pdSampleReference: moment(order.pdSampleReference).format('L'),
+          firstCarcass: moment(order.firstCarcass).format('L'),
+          completionCarcass: moment(order.completionCarcass).format('L'),
+          firstArtwork: moment(order.firstArtwork).format('L'),
+          completionArtwork: moment(order.completionArtwork).format('L'),
+          firstPackagingMaterial: moment(order.firstPackagingMaterial).format('L'),
+          completionPackagingMaterial: moment(order.completionPackagingMaterial).format('L'),
+          puMoldAvailability: puMoldAvail,
+          carcass: moment(order.carcass).format('L'),
+          artwork: moment(order.artwork).format('L'),
+          packagingMaterial: moment(order.packagingMaterial).format('L'),
+          crd: moment(order.crd).format('L'),
+          poptDate: moment(order.poptDate).format('L'),
+          qaSampleReference: qaSampleRef,
+          psiDate: moment(order.psiDate).format('L'),
+        }
+      }),
+    };
+
+        // Extract data from MUI Data Grid
+        const originalRows = data.rows.map((row) => {
+          return data.columns.map((column) => {
+            if (column.type === 'date') {
+              // Try to parse the date and return formatted date or null if invalid
+              const dateValue = new Date(row[column.field]);
+              return isNaN(dateValue) ? null : dateValue.toLocaleDateString();
+            }
+            return row[column.field];
+          });
+        });
+      
+
+        // Create a worksheet
+        const ws = XLSX.utils.aoa_to_sheet([data.columns.map((column) => column.header), ...originalRows]);
+
+        // Add 5 blank rows
+        for (let i = 0; i < 1; i++) {
+          XLSX.utils.sheet_add_aoa(ws, [[]], { origin: -1 });
+        }
+
+        // Use data2.rows as additionalRows
+        const additionalRows = [
+          data2.columns.map((column) => column.header), // Headers
+          ...data2.rows.map((row) =>
+            data2.columns.map((column) => {
+              if (column.type === 'date') {
+                // Format date to short date format if valid, otherwise return null
+                const dateValue = new Date(row[column.field]);
+                return isNaN(dateValue) ? null : dateValue.toLocaleDateString();
+              }
+              return row[column.field];
+            })
+          ),
+        ];
+        
+
+        XLSX.utils.sheet_add_aoa(ws, additionalRows, { origin: -1 });
+
+        // Create a workbook
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, 'Sheet1');
+
+        // Save the file
+        XLSX.writeFile(wb, 'exported_data.xlsx');
+
+        setTimeout(() => {
+          setDataGridLoading(false);  
+        }, 2000);
+
+  };
+
   const RenderPuMoldAvailability = (newRow) => {
 
     const [value,setValue] = React.useState(newRow.puMoldAvailability);
@@ -505,7 +655,7 @@ export default function ServerSidePersistence() {
   useEffect(() => {
     setTimeout(() => {
       setDataGridLoading(false);  
-    }, 2000);
+    }, 2500);
   }, [rows]);
 
   const comDepartment = user?.result?.department?.department;
@@ -876,7 +1026,8 @@ export default function ServerSidePersistence() {
         await dispatch(updateCellEditedBy(id,{edit}));
         //
       }
-      else if(oldRow.patternReleasing !== newRow.patternReleasing || oldRow.productSpecs !== newRow.productSpecs || oldRow.packagingSpecs !== newRow.packagingSpecs){
+      else if(oldRow.patternReleasing !== newRow.patternReleasing || oldRow.productSpecs !== newRow.productSpecs || oldRow.packagingSpecs !== newRow.packagingSpecs ||
+            oldRow.pdMoldAvailability !== newRow.pdMoldAvailability || oldRow.pdSampleReference !== newRow.pdSampleReference){
         if(moment(newRow.patternReleasing) <= moment(currentPO.dateIssued) || moment(newRow.patternReleasing) >= moment(currentPO.shipDate)){
           setSnackbar({ children: `Invalid Date, `, severity: 'error' });
           return oldRow;
@@ -886,6 +1037,14 @@ export default function ServerSidePersistence() {
           return oldRow;
         }
         if(moment(newRow.packagingSpecs) <= moment(currentPO.dateIssued) || moment(newRow.packagingSpecs) >= moment(currentPO.shipDate)){
+          setSnackbar({ children: `Invalid Date, `, severity: 'error' });
+          return oldRow;
+        }
+        if(moment(newRow.pdMoldAvailability) <= moment(currentPO.dateIssued) || moment(newRow.pdMoldAvailability) >= moment(currentPO.shipDate)){
+          setSnackbar({ children: `Invalid Date, `, severity: 'error' });
+          return oldRow;
+        }
+        if(moment(newRow.pdSampleReference) <= moment(currentPO.dateIssued) || moment(newRow.pdSampleReference) >= moment(currentPO.shipDate)){
           setSnackbar({ children: `Invalid Date, `, severity: 'error' });
           return oldRow;
         }
@@ -1009,13 +1168,13 @@ export default function ServerSidePersistence() {
 
   const CustomizeToolBar = ()=>(
     <GridToolbarContainer>
-      <GridToolbarExport  
+      {/* <GridToolbarExport  
           printOptions={{ disableToolbarButton: true }}
           csvOptions={{
             fileName: 'customerDataBase',
             utf8WithBom: true,
           }}
-          />
+          /> */}
     </GridToolbarContainer>
   )
 
@@ -1061,6 +1220,9 @@ export default function ServerSidePersistence() {
         <Stack direction="row" spacing={1}>
           <Button size="medium" variant="contained" color="secondary" onClick={handleAddRow} startIcon={<Add/>}>
             Add a row
+          </Button>
+          <Button size="medium" variant="contained" color="success" onClick={() => exportToExcel()} startIcon={<Add/>}>
+            Export to excel
           </Button>
         </Stack>
         </Box>
