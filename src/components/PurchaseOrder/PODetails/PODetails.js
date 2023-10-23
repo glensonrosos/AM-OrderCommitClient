@@ -1,6 +1,7 @@
 import React,{useEffect,useState} from 'react';
 import {Box,TextField, Autocomplete,Paper, Typography,Button,Backdrop,CircularProgress,Snackbar,Alert} from '@mui/material';
 import Grid from '@mui/material/Unstable_Grid2';
+import {Save} from '@mui/icons-material';
 
 import { DatePicker } from '@mui/x-date-pickers';
 import moment from 'moment';
@@ -287,10 +288,10 @@ const PODetails = () =>{
         // once edited by user, update is disabled
         const {logRequiredShipDate, logRequestedShipDate} = input;
         // invalid date
-        if(moment(logRequestedShipDate) <= moment(logRequiredShipDate)){
-            setSnackbar({ children: `Invalid Date, `, severity: 'error' });
-            return;
-        }
+        // if(moment(logRequestedShipDate) <= moment(logRequiredShipDate)){
+        //     setSnackbar({ children: `Invalid Date, `, severity: 'error' });
+        //     return;
+        // }
         // invalid date
 
 
@@ -362,9 +363,9 @@ const PODetails = () =>{
                     <Grid container spacing={4} justifyContent="center">
                     <Grid xs={6} md={12} lg={12}> 
                            <Grid spacing={2} container direction="row" alignItems="flex-end">
-                            <Typography variant="h5" sx={{ml:2}}> Account Management </Typography>
+                            <Typography variant="h5" sx={{ml:2}}> Account Management </Typography><br/>
                            </Grid>
-                        </Grid>
+                    </Grid>
                     <Grid xs={6} md={6} lg={6}>
                         <Box component="form" noValidate autoComplete="off"
                         sx={{
@@ -385,7 +386,7 @@ const PODetails = () =>{
                                 />
                             <TextField onChange={(e)=>handleOnChangeInput("poNumber",e)} value={input.poNumber || ''} fullWidth label="PO Number" variant="outlined" />
                             <DatePicker label="Ship Date" maxDate={moment().add(3,'y')} minDate={moment('2000','YYYY')} onChange={(e)=>handleOnChangeInput("shipDate",e)} value={moment(input.shipDate)}/>
-
+                            
                            {userEdited.name &&
                             <Grid sx={{mt:3}}>
                                 <Typography variant="p" color="error">Last edit : {userEdited.name} - {moment(userEdited.date).fromNow()} </Typography>
@@ -445,7 +446,11 @@ const PODetails = () =>{
                                         rows={3}
                                         />
 
-                                <Button variant="contained" color="primary" size="large" fullWidth onClick={handleSaveByAM}  > Save Changes </Button>
+                                <Button variant="contained" color="primary" size="large" startIcon={<Save/>} fullWidth onClick={handleSaveByAM}  > Save Changes </Button>
+
+                                <Grid sx={{mt:2}}>
+                                    <Typography variant="p" color="success"> Note: if ShipDate modify to EarlierDate,dont forget<br/> to clear the commited dates </Typography>
+                                </Grid>
                             </Box>
                         </Grid>
 
@@ -467,7 +472,7 @@ const PODetails = () =>{
                             <Typography variant="h5" sx={{mb:2}}> Logistics </Typography>
                             <DatePicker label="Required Ship Date" readOnly value={input.logRequiredShipDate ? moment(input.logRequiredShipDate) : null} />
                             <DatePicker label="Requested Ship Date" maxDate={moment().add(3,'y')} minDate={moment('2000','YYYY')} onChange={(e)=>handleOnChangeInput("logRequestedShipDate",e)} value={input.logRequestedShipDate ? moment(input.logRequestedShipDate) : null} /> 
-                            <Button variant="contained" color="primary" size="large" fullWidth onClick={handleSaveByLogistics}  > Save Changes </Button>
+                            <Button variant="contained" color="primary" size="large" startIcon={<Save/>} fullWidth onClick={handleSaveByLogistics}  > Save Changes </Button>
                             { userEdited?.logisticsName &&
                             <Grid sx={{mt:3}}>
                                 <Typography variant="p" color="error">Last edit : {userEdited.logisticsName} - {moment(userEdited.logisticsDate).fromNow()} </Typography>

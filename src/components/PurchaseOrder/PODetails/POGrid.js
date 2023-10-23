@@ -1,7 +1,7 @@
 import React,{useState,useEffect} from 'react';
 import { DataGrid,GridToolbarExport,GridToolbarContainer } from '@mui/x-data-grid';
 import {Snackbar,Alert,Button,Box,Tooltip,Switch,ImageList,Stack,Backdrop,CircularProgress, Typography,Select,MenuItem} from '@mui/material';
-import {Delete,Image,Add} from '@mui/icons-material';
+import {Delete,Image,Add,FileDownload, DeleteSweep, DeleteForever, CancelPresentation, Download, Upload} from '@mui/icons-material';
 import Grid from '@mui/material/Unstable_Grid2';
 
 // xlsx
@@ -127,6 +127,7 @@ export default function ServerSidePersistence() {
         { field: 'description'},
         { field: 'qty'},
         { field: 'firstOrder'},
+        { field: 'amArtwork'}, // glenson added updates
       ],
     },
     {
@@ -233,6 +234,66 @@ export default function ServerSidePersistence() {
     setOpenDialogDeleteRow(false);
   };
 
+  const handleDeleteCommitedDates = async () =>{
+    const comDepartment = user?.result?.department?.department;
+    if(comDepartment !== 'AM'){
+        setSnackbar({ children: `Only AM Dept are allow to Delete Row`, severity: 'error' });
+        handleCloseDialogDeleteRow();
+        return;
+    }
+    // AMCOM
+    const newUser = `${user?.result?.firstname} ${user?.result?.lastname}`;
+    const edit = {
+      amCom:{
+        editedBy: newUser,
+        updatedAt: moment(),
+      },
+      pdCom:{
+        editedBy: newUser,
+        updatedAt: moment(),
+      },
+      puCom:{
+        editedBy: newUser,
+        updatedAt: moment(),
+      },
+      prodCom:{
+        editedBy: newUser,
+        updatedAt: moment(),
+      },
+      qaCom:{
+        editedBy: newUser,
+        updatedAt: moment(),
+      }
+    }
+
+    await dispatch(updateCellEditedBy(id,{edit}));
+
+    await dispatch(updateCellOrderItem(toBeDeleteRow?.rowSelected?._id,{
+      patternReleasing: null,
+      productSpecs: null,
+      packagingSpecs: null,
+      pdMoldAvailability: null,
+      pdSampleReference: null,
+      firstCarcass: null,
+      completionCarcass: null,
+      firstArtwork: null,
+      completionArtwork: null,
+      firstPackagingMaterial: null,
+      completionPackagingMaterial: null,
+      carcass: null,
+      artwork: null,
+      packagingMaterial: null,
+      crd: null,
+      poptDate: null,
+      psiDate: null
+    }));
+    //
+    await dispatch(getCountOrderItemStatusOpen(id));
+    setSnackbar({ children: 'Clear Dates Successfully ', severity: 'success' });
+    handleCloseDialogDeleteRow();
+  }
+
+
   const handleDeleteRow = async () =>{
 
     const comDepartment = user?.result?.department?.department;
@@ -252,7 +313,9 @@ export default function ServerSidePersistence() {
     await dispatch(updateCellEditedBy(id,{edit}));
     //
     await dispatch(deleteOrderItem(toBeDeleteRow?.rowSelected?._id));
-    setSnackbar({ children: 'Successfully uploaded image', severity: 'success' });
+    //
+    await dispatch(getCountOrderItemStatusOpen(id));
+    setSnackbar({ children: 'Deleted Successfully', severity: 'success' });
     handleCloseDialogDeleteRow();
   }
 
@@ -337,6 +400,7 @@ export default function ServerSidePersistence() {
         { field: 'description', header: 'Description' },
         { field: 'qty', header: 'Qty' },
         { field: 'firstOrder', header: 'First Order' },
+        { field: 'amArtwork', header: 'with Artwork'},
         { field: 'patternReleasing', header: 'PD Pattern Releasing', type: 'date'},
         { field: 'productSpecs', header: 'PD Product Specs', type: 'date'},
         { field: 'packagingSpecs', header: 'PD Packaging Specs', type: 'date'},
@@ -359,22 +423,29 @@ export default function ServerSidePersistence() {
       ],
       rows: orderItems.map(order=>{
 
-        let puMoldAvail = 'None';
-        let qaSampleRef = 'None';
+        let puMoldAvail = 'Yes';
+        let qaSampleRef = 'Yes';
+        let amArtworkRef = 'Yes';
 
         if(order.puMoldAvailability === 1) 
           puMoldAvail = 'Yes'
         else if(order.puMoldAvailability === 0)
           puMoldAvail = 'No'
-
+        
         if(order.qaSampleRef === 1)
           qaSampleRef = 'Yes'
         else if(order.qaSampleRef === 0)
           qaSampleRef ='No';
 
+        if(order.amArtwork === 1) 
+          amArtworkRef = 'Yes'
+        else if(order.amArtwork === 0)
+          amArtworkRef = 'No'
+
         return{
           ...order,
           firstOrder: order.firstOrder ? 'YES' : 'NO',
+          amArtwork: amArtworkRef,
           patternReleasing: moment(order.patternReleasing).format('L'),
           productSpecs: moment(order.productSpecs).format('L'),
           packagingSpecs: moment(order.packagingSpecs).format('L'),
@@ -495,15 +566,67 @@ export default function ServerSidePersistence() {
           autoWidth
           onChange={(e)=>handleChange(e)}
           label="Mold Availability"
+          error={!value}
         >
-          <MenuItem value={-1}>
-            <em>None</em>
-          </MenuItem>
           <MenuItem value={1}>Yes</MenuItem>
           <MenuItem value={0}>No</MenuItem>
       </Select>
     )  
   }
+
+  const RenderAmArtwork = (newRow) => {
+
+    const [value,setValue] = React.useState(newRow.amArtwork);
+
+    const handleChange = (e) => {
+
+      const comDepartment = user?.result?.department?.department;
+      if(comDepartment !== 'AM' ){
+          setSnackbar({ children: `Only AM Dept are allow to edit With Artwork`, severity: 'error' });
+          return;
+      }
+
+      if(currentStatus !== 'OPEN'){
+        setSnackbar({ children: `disable from edit due to status ${currentStatus}`, severity: 'warning' });
+        return;
+      }
+
+      setValue(e.target.value);
+
+      newRow.amArtwork = e.target.value;
+      // AMCOM
+      const newUser = `${user?.result?.firstname} ${user?.result?.lastname}`;
+      const edit = {
+        amCom:{
+          editedBy: newUser,
+          updatedAt: moment(),
+        }
+      }
+     
+      const executeAwait = async () =>{
+        await dispatch(updateCellEditedBy(id,{edit}));
+        await dispatch(updateCellOrderItem(newRow?.id,newRow));
+        await dispatch(getCountOrderItemStatusOpen(id));    
+      }
+      executeAwait();
+
+      setSnackbar({ children: 'Successfully update cell', severity: 'success' });
+    };
+  
+    return(    
+      <Select
+          value={value}
+          autoWidth
+          onChange={(e)=>handleChange(e)}
+          label="With Artwork"
+          error={!value}
+        >
+          <MenuItem value={1}>Yes</MenuItem>
+          <MenuItem value={0}>No</MenuItem>
+      </Select>
+    )  
+  }
+
 
   const RenderQaSampleReference = (newRow) => {
     const [value,setValue] = React.useState(newRow.qaSampleReference);
@@ -548,10 +671,8 @@ export default function ServerSidePersistence() {
           value={value}
           autoWidth
           onChange={(e)=>handleChange(e)}
+          error={!value}
         >
-          <MenuItem value={-1}>
-            <em>None</em>
-          </MenuItem>
           <MenuItem value={1}>Yes</MenuItem>
           <MenuItem value={0}>No</MenuItem>
       </Select>
@@ -613,6 +734,18 @@ export default function ServerSidePersistence() {
 
   useEffect(() => {
 
+    if(rows?.length === 0){
+      dispatch(updatePOByAuto(id,{
+        status:{status:"OPEN",_id:"64cb742f6dec3a86e635ce26",color:"error",code:0},
+        reqAttDepts:[{_id:"64c764df789aa6953ef3d740",department:"AM"}],}));
+    }
+
+    if(currentDeptOpenStatus?.department === 'AM' && currentStatus === 'OPEN'){
+      if(-1 === currentReqAttDepts.findIndex(dept => dept.department === 'AM'))
+      dispatch(updatePOByAuto(id,{
+        status:{status:"OPEN",_id:"64cb742f6dec3a86e635ce26",color:"error",code:0},
+        reqAttDepts:[{_id:"64c764df789aa6953ef3d740",department:"AM"}],}));
+    }
     if(currentDeptOpenStatus?.department === 'PD' && currentStatus === 'OPEN'){
       if(-1 === currentReqAttDepts.findIndex(dept => dept.department === 'PD'))
           dispatch(updatePOByAuto(id,{
@@ -696,6 +829,13 @@ export default function ServerSidePersistence() {
       valueFormatter: ({ value }) => value ? `Yes` : `No`,
       width: 80,minWidth: 30, maxWidth: 100,
       renderCell: (params) => RenderFirstOrder(params.row),
+    },
+    {
+      field: 'amArtwork',
+      headerName: 'With Artwork',
+      valueFormatter: ({ value }) => value ? `Yes` : `No`,
+      width: 100,minWidth: 30, maxWidth: 100,
+      renderCell: (params) => RenderAmArtwork(params.row),
     },
     {
       field: 'patternReleasing',
@@ -851,7 +991,7 @@ export default function ServerSidePersistence() {
   ];
 
 
-  const handleAddRow = () => {
+  const handleAddRow = async () => {
 
     if(currentStatus !== 'OPEN'){
 
@@ -874,6 +1014,7 @@ export default function ServerSidePersistence() {
       description:null,
       qty:0,
       firstOrder:false,
+      amArtwork: 1,
       patternReleasing: null,
       productSpecs: null,
       packagingSpecs: null,
@@ -885,17 +1026,19 @@ export default function ServerSidePersistence() {
       completionArtwork: null,
       firstPackagingMaterial: null,
       completionPackagingMaterial: null,
-      puMoldAvailability: -1,
+      puMoldAvailability: 1,
       carcass: null,
       artwork: null,
       packagingMaterial: null,
       crd: null,
       poptDate: null,
-      qaSampleReference: -1,
+      qaSampleReference: 1,
       psiDate: null
     }
 
-    dispatch(createOrderItem(emptyDataRow));
+    await dispatch(createOrderItem(emptyDataRow));
+
+    await dispatch(getCountOrderItemStatusOpen(id));
     
     setSnackbar({ children: 'Added row successfully', severity: 'success' });
   };
@@ -1072,10 +1215,10 @@ export default function ServerSidePersistence() {
           setSnackbar({ children: `Invalid Date, `, severity: 'error' });
           return oldRow;
         }
-        // if(moment(newRow.crd) <= moment(currentPO.dateIssued) || moment(newRow.crd) >= moment(currentPO.shipDate)){
-        //   setSnackbar({ children: `Invalid Date, `, severity: 'error' });
-        //   return oldRow;
-        // }
+        if(moment(newRow.crd) <= moment(currentPO.dateIssued) || moment(newRow.crd) >= moment(currentPO.shipDate)){
+          setSnackbar({ children: `Invalid Date, `, severity: 'error' });
+          return oldRow;
+        }
         // PROD-COM
         const newUser = `${user?.result?.firstname} ${user?.result?.lastname}`;
         const edit = {
@@ -1156,7 +1299,7 @@ export default function ServerSidePersistence() {
       await dispatch(updateCellOrderItem(oldRow.id,newRow));
 
       await dispatch(getCountOrderItemStatusOpen(id));
-
+    
       setSnackbar({ children: 'Successfully update cell', severity: 'success' });
       return await newRow;
       
@@ -1221,7 +1364,7 @@ export default function ServerSidePersistence() {
           <Button size="medium" variant="contained" color="secondary" onClick={handleAddRow} startIcon={<Add/>}>
             Add a row
           </Button>
-          <Button size="medium" variant="contained" color="success" onClick={() => exportToExcel()} startIcon={<Add/>}>
+          <Button size="medium" variant="contained" color="success" onClick={() => exportToExcel()} startIcon={<FileDownload/>}>
             Export to excel
           </Button>
         </Stack>
@@ -1330,7 +1473,7 @@ export default function ServerSidePersistence() {
 
             </DialogContent>
             <DialogActions>
-              <Button onClick={handleCloseDialog} variant="contained" color="warning">Cancel</Button>
+              <Button onClick={handleCloseDialog} startIcon={<CancelPresentation/>} variant="contained" color="warning">Cancel</Button>
               {imageData?.rowSelected?.itemCode != null ? 
                 <Button onClick={()=>{
                   if(imageData?.image === NoImage){
@@ -1339,10 +1482,12 @@ export default function ServerSidePersistence() {
                     triggerBase64Download(imageData?.image, imageData?.rowSelected?.itemCode)
                   }
                 }}
-                  variant="contained" color="error">
+                  variant="contained" color="error" startIcon={<Download/>}>
                     DOWNLOAD 
               </Button>: null}
-              <Button onClick={handleUploadImage} variant="contained">Upload Image</Button>
+              {user?.result?.department?.department === 'AM' &&
+                <Button onClick={handleUploadImage} startIcon={<Upload/>} variant="contained">Upload Image</Button>
+              }
             </DialogActions>
           </Dialog>
           {/* Dialog for image upload */}
@@ -1364,10 +1509,13 @@ export default function ServerSidePersistence() {
               </DialogContentText>
             </DialogContent>
             <DialogActions>
-              <Button variant="contained" color="error" onClick={handleCloseDialogDeleteRow}>Cancel</Button>
-              <Button variant="contained" color="info" onClick={handleDeleteRow} autoFocus>
-                Proceed
+              <Button variant="contained" color="error" startIcon={<CancelPresentation/>} onClick={handleCloseDialogDeleteRow}>Cancel</Button>
+              <Button variant="contained" color="info" startIcon={<DeleteForever/>} onClick={handleDeleteRow} autoFocus>
+                Delete Row
               </Button>
+            </DialogActions>
+            <DialogActions>
+              <Button variant="contained" color="warning" startIcon={<DeleteSweep/>} onClick={handleDeleteCommitedDates}>Delete Commited Dates Only</Button>
             </DialogActions>
           </Dialog>
 

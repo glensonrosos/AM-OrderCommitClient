@@ -56,7 +56,7 @@ function AudioPlayer() {
   const stopInterval = () => {
     if (intervalId0) {
       //clearInterval(intervalId0);
-      document.title = 'React App';
+      document.title = 'PEBA-OrderCommitment';
       audioRef.current.pause();
       audioRef.current.currentTime = 0;
       stopInterval1(); // title tag interval stop
@@ -124,9 +124,9 @@ function AudioPlayer() {
   useEffect(() => {
     document.title = `${messages[currentMessageIndex]}`;
     if(intervalId1 == null)
-      document.title = 'React App';
+      document.title = 'PEBA-OrderCommitment';
     return () => {
-      document.title = 'React App'; // Reset the title to a default value
+      document.title = 'PEBA-OrderCommitment'; // Reset the title to a default value
     };
   }, [currentMessageIndex, messages]);
 
