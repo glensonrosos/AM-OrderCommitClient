@@ -1,65 +1,69 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { DataGrid } from '@mui/x-data-grid';
+import './SampleDataGrid.css'; // Import your custom CSS file
 
-function App() {
-  const [selectedCellValue, setSelectedCellValue] = useState('');
+const columns = [
+  { field: 'id', headerName: 'ID', width: 70, pinned: 'left' },
+  { field: 'firstName', headerName: 'First Name', width: 130, pinned: 'left' },
+  { field: 'column3', headerName: 'Column 3', width: 120 },
+  { field: 'column4', headerName: 'Column 4', width: 120 },
+  // ... (add more columns as needed)
+  { field: 'column19', headerName: 'Column 19', width: 120 },
+  { field: 'column20', headerName: 'Column 20', width: 120 },
+  { field: 'lastName', headerName: 'Last Name', width: 130 },
+  { field: 'age', headerName: 'Age', type: 'number', width: 90 },
+];
 
-  useEffect(() => {
-    const handleCopyShortcut = (event) => {
-      if ((event.ctrlKey || event.metaKey) && event.key === 'c') {
-        event.preventDefault();
-        copyToClipboard(selectedCellValue);
-      }
-    };
+const pinnedRows = [
+  { id: 1, firstName: 'John' },
+  { id: 2, firstName: 'Jane' },
+];
 
-    document.addEventListener('keydown', handleCopyShortcut);
+const rows = [
+  { id: 3, firstName: 'Bob', lastName: 'Smith', age: 22 },
+  { id: 4, firstName: 'Alice', lastName: 'Johnson', age: 28 },
+  { id: 5, firstName: 'Charlie', lastName: 'Brown', age: 35 },
+];
 
-    return () => {
-      document.removeEventListener('keydown', handleCopyShortcut);
-    };
-  }, [selectedCellValue]);
-
-  const copyToClipboard = (value) => {
-    if (!value) return; // Ensure there's a value to copy
-
-    if (navigator.clipboard) {
-      navigator.clipboard.writeText(value)
-        .then(() => {
-          console.log('Data copied to clipboard');
-        })
-        .catch((error) => {
-          console.error('Failed to copy data to clipboard:', error);
-        });
-    } else {
-      console.warn('Clipboard API not supported in this browser.');
-    }
-  };
-
-  const rows = [
-    { id: 1, name: 'John', age: 25 },
-    { id: 2, name: 'Jane', age: 30 },
-    { id: 3, name: 'Bob', age: 28 },
-    // ... Add more rows as needed
-  ];
-
-  const columns = [
-    { field: 'id', headerName: 'ID', width: 70 },
-    { field: 'name', headerName: 'Name', width: 150 },
-    { field: 'age', headerName: 'Age', width: 100 },
-    // ... Add more columns as needed
-  ];
-
+export default function SampleDataGrid() {
   return (
-    <div style={{ height: 400, width: '100%' }}>
+    <div className="data-grid-container">
+      <div className="pinned-columns">
+        <div className="pinned-column">ID</div>
+        <div className="pinned-column">First Name</div>
+      </div>
       <DataGrid
         rows={rows}
         columns={columns}
-        onCellClick={(params) => {
-          setSelectedCellValue(params.value);
+        pageSize={5}
+        rowsPerPageOptions={[5]}
+        autoHeight
+        components={{
+          header: {
+            cell: ({ colDef }) => (
+              <div className={`pinned-header ${colDef.pinned || ''}`}>
+                {colDef.headerName}
+              </div>
+            ),
+          },
+        }}
+      />
+      <DataGrid
+        rows={pinnedRows}
+        columns={columns.slice(0, 2)} // Use only the first two columns for pinned rows
+        pageSize={5}
+        rowsPerPageOptions={[5]}
+        autoHeight
+        components={{
+          header: {
+            cell: ({ colDef }) => (
+              <div className={`pinned-header ${colDef.pinned || ''}`}>
+                {colDef.headerName}
+              </div>
+            ),
+          },
         }}
       />
     </div>
   );
 }
-
-export default App;

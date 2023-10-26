@@ -1,0 +1,18 @@
+.data-grid-container {
+    position: relative;
+  }
+  
+  .pinned-columns {
+    position: absolute;
+    top: 0;
+    left: 0;
+    background-color: #f0f0f0;
+    z-index: 1;
+    display: flex;
+  }
+  
+  .pinned-column {
+    padding: 8px;
+    border-right: 1px solid #ccc;
+  }
+  

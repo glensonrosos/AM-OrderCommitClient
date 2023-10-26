@@ -734,6 +734,9 @@ export default function ServerSidePersistence() {
 
   useEffect(() => {
 
+    if(currentStatus === null || currentStatus === undefined)
+      return;
+
     if(rows?.length === 0){
       dispatch(updatePOByAuto(id,{
         status:{status:"OPEN",_id:"64cb742f6dec3a86e635ce26",color:"error",code:0},
@@ -772,8 +775,8 @@ export default function ServerSidePersistence() {
     }
 
     if(currentDeptOpenStatus?.department === 'LOGS' && currentStatus === 'OPEN' && rows.length > 0){
+        console.log('glenson gwapo');
         if(currentLogsDate.logRequired != null && currentLogsDate.logRequested != null){
-          
           dispatch(updatePOByAuto(id,{
             status:{status:"OPEN",_id:"64cb742f6dec3a86e635ce26",color:"error",code:0},
             reqAttDepts:[{_id:"64c764df789aa6953ef3d740",department:"AM"}],}));
@@ -783,7 +786,7 @@ export default function ServerSidePersistence() {
             reqAttDepts:[{"_id":"64c76507789aa6953ef3d745","department":"LOGISTICS"}],}));
         }
     }
-  },[currentDeptOpenStatus]);
+  },[currentDeptOpenStatus,currentStatus]);
 
   useEffect(() => {
     setTimeout(() => {
@@ -802,12 +805,14 @@ export default function ServerSidePersistence() {
       editable: comDepartment === 'AM' ? true : false,
       headerClassName: 'super-app-theme--header',
       width:130, maxWidth:200, minWidth:80, 
+      pinned: true
     },
     {
       field: 'image',
       headerName: 'Image',
       renderCell: (params) => RenderUpload(params.row),
-      disableExport: true
+      disableExport: true,
+      pinned: true
     },
     {
       field: 'description',
@@ -815,6 +820,7 @@ export default function ServerSidePersistence() {
       type: 'string',
       editable: comDepartment === 'AM' ? true : false,
       width: 200,minWidth: 80, maxWidth: 250,
+      pinned: true
     },
     {
       field: 'qty',
