@@ -256,7 +256,6 @@ export default function StickyHeadTable() {
     { id: 'shipdate', label: 'Ship Date', minWidth: 100 },
     { id: 'status', label: 'Status', minWidth: 100 },
     { id: 'requireatt', label: 'Require Attention', minWidth: 100 },
-    
   ];
   
   function createData(ponumber, dateissued, buyer, shipdate,status,requireatt) {

@@ -1,16 +1,19 @@
 import React,{useState,useEffect} from 'react';
-import { DataGrid,GridToolbarExport,GridToolbarContainer } from '@mui/x-data-grid';
-import {Snackbar,Alert,Button,Box,Tooltip,Switch,ImageList,Stack,Backdrop,CircularProgress, Typography,Select,MenuItem} from '@mui/material';
-import {Delete,Image,Add,FileDownload, DeleteSweep, DeleteForever, CancelPresentation, Download, Upload} from '@mui/icons-material';
+import { DataGrid,GridToolbarExport,GridToolbarContainer,GridToolbarColumnsButton } from '@mui/x-data-grid';
+import {Snackbar,Alert,Button,Box,Tooltip,Switch,ImageList,Stack,Backdrop,CircularProgress, Typography,Select,
+        MenuItem,Table,TableHead,TableRow,TableCell,TableBody,Paper,TableContainer, Checkbox,FormControl,InputLabel} from '@mui/material';
+import {Delete,Image,Add,FileDownload, DeleteSweep, DeleteForever, CancelPresentation, Download, Upload, EditCalendar, Check, Save} from '@mui/icons-material';
 import Grid from '@mui/material/Unstable_Grid2';
 
 // xlsx
 import * as XLSX from 'xlsx';
 
 import { useParams } from 'react-router';
-import moment from 'moment';
 import FileBase64 from 'react-file-base64';
 import {triggerBase64Download} from 'react-base64-downloader';
+
+import { DatePicker } from '@mui/x-date-pickers';
+import moment from 'moment';
 
 import { useDispatch,useSelector } from 'react-redux';
 import { getOrderItems,getOrderItemsNoLoading,createOrderItem,updateCellOrderItem,getCountOrderItemStatusOpen,deleteOrderItem,getOrderItemImage } from '../../../actions/orderitems';
@@ -232,6 +235,14 @@ export default function ServerSidePersistence() {
   const handleCloseDialogDeleteRow = () => {
     setToBeDeleteRow({rowSelected:null});
     setOpenDialogDeleteRow(false);
+  };
+
+  const [openDialogEditBulk, setOpenDialogEditBulk] = useState(false);
+  const handleOpenDialogEditBulk = () => {
+    setOpenDialogEditBulk(true);
+  };
+  const handleCloseDialogEditBulk = () => {
+    setOpenDialogEditBulk(false);
   };
 
   const handleDeleteCommitedDates = async () =>{
@@ -523,7 +534,7 @@ export default function ServerSidePersistence() {
 
   const RenderPuMoldAvailability = (newRow) => {
 
-    const [value,setValue] = React.useState(newRow.puMoldAvailability);
+    const [value,setValue] = useState(newRow.puMoldAvailability);
 
     const handleChange = (e) => {
 
@@ -996,6 +1007,16 @@ export default function ServerSidePersistence() {
     }
   ];
 
+  // DATA TABLE FOR BULK EDIT --START
+  const columnsTable = [
+    { id: 'itemCode', label: 'Item Code', minWidth: 170 },
+    { id: 'description', label: 'Description', minWidth: 100 },
+    { id: 'qty', label: 'Qty', minWidth: 100 },
+    { id: 'amArtwork', label: 'With Artwork', minWidth: 100 },
+    { id: '_id', label: 'Selection', minWidth: 170 },
+  ];
+
+  // DATA TABLE FOR BULK EDIT --END
 
   const handleAddRow = async () => {
 
@@ -1324,6 +1345,7 @@ export default function ServerSidePersistence() {
             utf8WithBom: true,
           }}
           /> */}
+          <GridToolbarColumnsButton />
     </GridToolbarContainer>
   )
 
@@ -1354,6 +1376,138 @@ export default function ServerSidePersistence() {
     }
   }
 
+  // Edit Cell in Bulk Start
+  const [valueEditCellInBulk,setValueEditCellInBulk] = useState(null);
+  const [valueColumnEditCellInBulk,setValueColumnEditCellInBulk] = useState(null);
+  const [pdYesNo,setPdYesNo] = useState(1);
+  const [selectedRowsEditCellInBulk, setSelectedRowsEditCellInBulk] = useState([]);
+
+  const [dateBulk,setDateBulk] = useState(null);
+  
+  const [selectAllEditCellInBulk, setSelectAllEditCellInBulk] = useState(false);
+  const columnsDate = [
+    {
+      department:'pd',
+      children:[
+        {id:'patternReleasing',name:'Pattern Releasing'},
+        {id:'productSpecs',name:'Product Specs'},
+        {id:'packagingSpecs',name:'Packaging Specs'},
+        {id:'pdMoldAvailability',name:'Mold Availability'},
+        {id:'pdSampleReference',name:'Sample Reference'},
+      ]
+    },
+    {
+      department:'pu',
+      children:[
+        {id:'firstCarcass',name:'First Carcass'},
+        {id:'completionCarcass',name:'Completion Carcass'},
+        {id:'firstArtwork',name:'First Artwork'},
+        {id:'completionArtwork',name:'Completion Artwork'},
+        {id:'firstPackagingMaterial',name:'First Packaging Material'},
+        {id:'completionPackagingMaterial',name:'Completion Packaging Material'},
+        {id:'puMoldAvailability',name:'Mold Availability'},
+      ]
+    },
+    {
+      department:'prod',
+      children:[
+        {id:'carcass',name:'Carcass'},
+        {id:'artwork',name:'Artwork'},
+        {id:'packagingMaterial',name:'Packaging Material'},
+        {id:'crd',name:'CRD'},
+      ]
+    },
+    {
+      department:'qa',
+      children:[
+        {id:'poptDate',name:'POPT Date'},
+        {id:'qaSampleReference',name:'Sample Reference'},
+        {id:'psiDate',name:'PSI Date'},
+      ]
+    },
+  ];
+
+  const dateColumns = () => {
+    if(valueEditCellInBulk !== null){
+      return columnsDate.map(col => {
+        if(col?.department === valueEditCellInBulk){
+            return col?.children.map(row => {
+               return <MenuItem value={row.id}>{row?.name}</MenuItem>
+            })
+        }
+      }) 
+    }
+  }
+    
+
+  const handleChangeEditCellInBulkDepartment = (e) => {
+    setValueEditCellInBulk(e.target.value);
+    setDateBulk(null)
+    //setSnackbar({ children: 'Successfully update cell', severity: 'success' });
+  };
+
+  const handleChangeColumnEditCellInBulkDepartment = (e) => {
+    setValueColumnEditCellInBulk(e.target.value);
+    //setSnackbar({ children: 'Successfully update cell', severity: 'success' });
+  };
+
+  const handleMasterCheckboxChange = () => {
+    const allIds = rows.map((row) => row.id);
+    if (selectAllEditCellInBulk) {
+      // If master checkbox is unchecked, clear all selected rows
+      setSelectedRowsEditCellInBulk([]);
+    } else {
+      // If master checkbox is checked, select all rows
+      setSelectedRowsEditCellInBulk(allIds);
+    }
+    setSelectAllEditCellInBulk(!selectAllEditCellInBulk);
+  };
+
+  const handleCheckboxChangeEditCellInBulk = (id) => {
+    // Check if the row is already selected
+    const isSelected = selectedRowsEditCellInBulk.includes(id);
+
+    // If selected, remove from the array; otherwise, add to the array
+    setSelectedRowsEditCellInBulk((prevSelected) =>
+      isSelected
+        ? prevSelected.filter((selectedId) => selectedId !== id)
+        : [...prevSelected, id]
+    );
+  };
+
+
+  const handleSaveEditCellInBulk = async () =>{
+
+    // if(currentStatus !== 'OPEN'){
+    //   setSnackbar({ children: `disable from edit due to status ${currentStatus}`, severity: 'warning' });
+    //   return;
+    // }
+
+    // const newUser = `${user?.result?.firstname} ${user?.result?.lastname}`;
+    // const edit = {
+    //   puCom:{
+    //     editedBy: newUser,
+    //     updatedAt: moment(),
+    //   }
+    // }
+    // await dispatch(updateCellEditedBy(id,{edit}));
+    // // action to update
+    // await dispatch(getCountOrderItemStatusOpen(id));
+
+    // setSnackbar({ children: 'Successfully update cell', severity: 'success' });
+
+    //selectedRowsEditCellInBulk => orderitem ids
+    //valueColumnEditCellInBulk => cell selected
+    // if(valueColumnEditCellInBulk === 'puMoldAvailability' || valueColumnEditCellInBulk === 'qaSampleReference')
+    //   alert(pdYesNo + 'yes/no');
+    // else
+    //   alert(dateBulk + 'date');
+    console.log(selectedRowsEditCellInBulk);
+    console.log(dateBulk);
+  }
+
+  // Edit Cell in Bulk End
+
  
 
   return (
@@ -1373,15 +1527,23 @@ export default function ServerSidePersistence() {
           <Button size="medium" variant="contained" color="success" onClick={() => exportToExcel()} startIcon={<FileDownload/>}>
             Export to excel
           </Button>
+          <Button size="medium" variant="contained" color="warning" onClick={handleOpenDialogEditBulk} startIcon={<EditCalendar/>}>
+            Edit Cell in Bulk
+          </Button>
         </Stack>
         </Box>
         <Box sx={{ maxHeight: 600, width: '100%',mt:1 }}>
+        <div style={{ height: 700, width: '100%' }}>
+          <Typography>
+            Total Rows : {rows.length}
+          </Typography>
         <DataGrid
           rows={rows}
           columns={columns}
           processRowUpdate={processRowUpdate}
           onProcessRowUpdateError={handleProcessRowUpdateError}
-          getRowHeight={() => 'auto'} getEstimatedRowHeight={() => 200} 
+          getRowHeight={() => 'auto'}
+          getEstimatedRowHeight={() => 200} 
           pageSizeOptions={[20]}
           showCellVerticalBorder
           showColumnVerticalBorder
@@ -1444,6 +1606,7 @@ export default function ServerSidePersistence() {
               overflow: "scroll"
           }}
         />
+        </div>
         </Box>
         {/* Dialog image upload */}
         <Dialog open={openDialog} onClose={handleCloseDialog}>
@@ -1499,7 +1662,6 @@ export default function ServerSidePersistence() {
           {/* Dialog for image upload */}
 
           {/* Dialog for delete row */}
-
           <Dialog
             open={openDialogDeleteRow}
             onClose={handleCloseDialogDeleteRow}
@@ -1524,8 +1686,176 @@ export default function ServerSidePersistence() {
               <Button variant="contained" color="warning" startIcon={<DeleteSweep/>} onClick={handleDeleteCommitedDates}>Delete Commited Dates Only</Button>
             </DialogActions>
           </Dialog>
-
           {/* Dialog for delete row */}
+
+          {/* Dialog bulk edit */}
+          <Dialog
+            open={openDialogEditBulk}
+            onClose={handleCloseDialogEditBulk}
+            aria-labelledby="alert-dialog-title"
+            aria-describedby="alert-dialog-description"
+            fullWidth={true}
+            maxWidth={'xl'}
+            fullScreen
+          >
+            <DialogTitle id="alert-dialog-title">
+              Edit Cell in Bulk
+            </DialogTitle>
+            <DialogContent>
+              <Box sx={{ maxHeight: 800, width: '100%',mt:1 }}>
+                <Paper sx={{ width: '100%', overflow: 'hidden' }}>
+                  <TableContainer sx={{ maxHeight: 700 }}>
+                      <Table stickyHeader aria-label="sticky table" size='small'>
+                      <TableHead>
+                          <TableRow sx={{"& .MuiTableCell-head": {
+                                        color: "white",
+                                        backgroundColor: "#6F1E51"
+                                    }}}>
+                          {
+                            columnsTable.map((columnTable) => (
+                              columnTable.label === 'Selection' ?
+                                <TableCell
+                                  key={columnTable.id}
+                                  align={columnTable.align}
+                                  style={{ minWidth: columnTable.minWidth }}
+                                >
+                                  {columnTable.label}
+                                  <Checkbox
+                                    checked={selectAllEditCellInBulk}
+                                    onChange={handleMasterCheckboxChange}
+                                    inputProps={{ 'aria-label': 'controlled' }}
+                                  />
+                                </TableCell> 
+                                :
+                                 <TableCell
+                                  key={columnTable.id}
+                                  align={columnTable.align}
+                                  style={{ minWidth: columnTable.minWidth }}
+                                >
+                                  {columnTable.label}
+                                </TableCell>
+                          ))}
+                          </TableRow>
+                      </TableHead>
+                      <TableBody>
+                          {rows
+                          .map((row,i) => {
+                              return (
+                              <TableRow hover role="checkbox" tabIndex={-1} key={i}>
+                                  {columnsTable.map((columnTable) => {
+                                  const value = row[columnTable.id];
+                                    const tableCellData = () => {
+                                      if(columnTable.id === '_id')
+                                        return <Checkbox
+                                          checked={selectedRowsEditCellInBulk.includes(row.id)}
+                                          onChange={() => handleCheckboxChangeEditCellInBulk(row.id)}
+                                          inputProps={{ 'aria-label': 'controlled' }}
+                                        />
+                                      else if(columnTable.id === 'amArtwork')
+                                        return value === 0 ? 'NO' : 'YES'
+                                      else if(columnTable.format && typeof value === 'number')
+                                        return columnTable.format(value)
+                                      else
+                                        return value
+                                    }
+
+                                    return (
+                                      <TableCell key={columnTable.id} align={columnTable.align}>
+                                      {/* {columnTable.format && typeof value === 'number'
+                                          ? columnTable.format(value)
+                                          : value} */}
+                                          {tableCellData()}
+                                      </TableCell>
+                                    );
+
+                                  })}
+                              </TableRow>
+                              );
+                          })}
+                      </TableBody>
+                      </Table>
+                  </TableContainer>
+                  </Paper>
+              </Box>
+              <Box sx={{ maxHeight: 600, width: '100%',mt:5}}>
+              <Grid container spacing={2} justifyContent="center" sx={{mb:2}}>  
+                <Grid xs={6} md={3} lg={3}>
+                  <Grid container spacing={4} justifyContent="flex-start">
+                    <FormControl component='div' variant='outlined' sx={{width:'70%',ml:5}}>
+                      <InputLabel id='test-select-label'>Department Commitment</InputLabel>
+                        <Select
+                            value={valueEditCellInBulk}
+                            autoWidth
+                            onChange={(e)=>handleChangeEditCellInBulkDepartment(e)}
+                            label="Department Commitment"
+                          >
+                            <MenuItem value='pd'>PD Commitment</MenuItem>
+                            <MenuItem value='pu'>Purchasing Commitment</MenuItem>
+                            <MenuItem value='prod'>Production Commitment</MenuItem>
+                            <MenuItem value='qa'>QA Commitment</MenuItem>
+                        </Select>
+                       
+                      </FormControl>
+                   </Grid>
+                </Grid>
+                <Grid xs={6} md={2} lg={2 }>
+                    
+                </Grid>
+                <Grid xs={6} md={5} lg={5}>
+                  <Grid container spacing={4} justifyContent="flex-start">
+                    <FormControl component='div' variant='outlined' sx={{width:'50%',mr:3}}>
+                      <InputLabel id='pd column'>Date Column</InputLabel>
+                        <Select
+                            value={valueColumnEditCellInBulk}
+                            autoWidth
+                            defaultValue={null}
+                            onChange={(e)=>handleChangeColumnEditCellInBulkDepartment(e)}
+                            label="Date Column"
+                          >
+                            {
+                              dateColumns()
+                            }
+                            
+                        </Select>
+                        <Typography sx={{mt:3}}>
+                          Note: If the selected row already have a date commited, it will skip this edit action.
+                        </Typography>
+                      </FormControl>
+                      <div style={{display: 
+                        valueColumnEditCellInBulk === 'puMoldAvailability' || valueColumnEditCellInBulk === 'qaSampleReference' 
+                        ? 'none' : 'block'}}>
+                        <DatePicker label="Date Bulk Edit" maxDate={moment().add(3,'y')} minDate={moment('2000','YYYY')}  onChange={(e)=>setDateBulk(e)} value={moment(dateBulk)}/>
+                      </div>
+                      <div style={{display: 
+                        valueColumnEditCellInBulk === 'puMoldAvailability' || valueColumnEditCellInBulk === 'qaSampleReference' 
+                        ? 'block' : 'none'}}>
+                        <Select
+                              value={pdYesNo}
+                              autoWidth
+                              defaultValue={null}
+                              onChange={(e)=>setPdYesNo(e.target.value)}
+                              label="Value"
+                            >
+                            <MenuItem value={1}>Yes</MenuItem>
+                            <MenuItem value={0}>No</MenuItem>
+                        </Select>
+                      </div>
+                   </Grid>
+                </Grid>
+                
+              </Grid>
+              </Box>
+            </DialogContent>
+            <DialogActions>
+              <Button variant="contained" color="error" startIcon={<CancelPresentation/>} onClick={handleCloseDialogEditBulk}>Cancel</Button>
+              <Button variant="contained" color="info" startIcon={<Save/>} onClick={handleSaveEditCellInBulk} autoFocus>
+                Save Changes
+              </Button>
+            </DialogActions>
+          </Dialog>
+
+          {/* Dialog for bulk edit */}
+
         {!!snackbar && (
           <Snackbar
             open
