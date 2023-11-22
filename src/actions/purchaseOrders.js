@@ -84,7 +84,8 @@ export const createPO = (newPO,navigate) => async (dispatch) =>{
 
         dispatch({type: CREATE_PO, payload: data});
 
-        navigate(`/purchase-order-detail/${data._id}`);
+        if(data.message === 'success')
+            navigate(`/purchase-order-detail/${data?.po?._id}`);
 
         dispatch({type: END_LOADING_HOME});
 

@@ -1,69 +1,102 @@
-import React from 'react';
-import { DataGrid } from '@mui/x-data-grid';
-import './SampleDataGrid.css'; // Import your custom CSS file
+import React, { useState } from 'react';
+import Table from '@mui/material/Table';
+import TableBody from '@mui/material/TableBody';
+import TableCell from '@mui/material/TableCell';
+import TableContainer from '@mui/material/TableContainer';
+import TableHead from '@mui/material/TableHead';
+import TableRow from '@mui/material/TableRow';
+import Paper from '@mui/material/Paper';
+import Checkbox from '@mui/material/Checkbox';
+import FormControlLabel from '@mui/material/FormControlLabel';
 
 const columns = [
-  { field: 'id', headerName: 'ID', width: 70, pinned: 'left' },
-  { field: 'firstName', headerName: 'First Name', width: 130, pinned: 'left' },
-  { field: 'column3', headerName: 'Column 3', width: 120 },
-  { field: 'column4', headerName: 'Column 4', width: 120 },
-  // ... (add more columns as needed)
-  { field: 'column19', headerName: 'Column 19', width: 120 },
-  { field: 'column20', headerName: 'Column 20', width: 120 },
-  { field: 'lastName', headerName: 'Last Name', width: 130 },
-  { field: 'age', headerName: 'Age', type: 'number', width: 90 },
+  { id: 'name', label: 'Name', group: 'General', minWidth: 100 },
+  { id: 'age', label: 'Age', group: 'General', minWidth: 50 },
+  { id: 'gender', label: 'Gender', group: 'General', minWidth: 50 },
+  { id: 'salary', label: 'Salary', group: 'Financial', minWidth: 100 },
+  { id: 'position', label: 'Position', group: 'Financial', minWidth: 100 },
 ];
 
-const pinnedRows = [
-  { id: 1, firstName: 'John' },
-  { id: 2, firstName: 'Jane' },
+const data = [
+  { name: 'John', age: 25, gender: 'Male', salary: 50000, position: 'Developer' },
+  { name: 'Jane', age: 30, gender: 'Female', salary: 60000, position: 'Manager' },
+  // Add more data as needed
 ];
 
-const rows = [
-  { id: 3, firstName: 'Bob', lastName: 'Smith', age: 22 },
-  { id: 4, firstName: 'Alice', lastName: 'Johnson', age: 28 },
-  { id: 5, firstName: 'Charlie', lastName: 'Brown', age: 35 },
-];
+const HideShowColumnsTable = () => {
+  const [visibleColumns, setVisibleColumns] = useState(columns.map((column) => column.id));
 
-export default function SampleDataGrid() {
+  const handleCheckboxChange = (columnId) => {
+    setVisibleColumns((prevVisibleColumns) => {
+      if (prevVisibleColumns.includes(columnId)) {
+        return prevVisibleColumns.filter((col) => col !== columnId);
+      } else {
+        return [...prevVisibleColumns, columnId];
+      }
+    });
+  };
+
+  const isGroupVisible = (group) => {
+    const groupColumns = columns.filter((column) => column.group === group);
+    const visibleGroupColumns = groupColumns.filter((column) => visibleColumns.includes(column.id));
+
+    return visibleGroupColumns.length > 0;
+  };
+
   return (
-    <div className="data-grid-container">
-      <div className="pinned-columns">
-        <div className="pinned-column">ID</div>
-        <div className="pinned-column">First Name</div>
-      </div>
-      <DataGrid
-        rows={rows}
-        columns={columns}
-        pageSize={5}
-        rowsPerPageOptions={[5]}
-        autoHeight
-        components={{
-          header: {
-            cell: ({ colDef }) => (
-              <div className={`pinned-header ${colDef.pinned || ''}`}>
-                {colDef.headerName}
-              </div>
-            ),
-          },
-        }}
-      />
-      <DataGrid
-        rows={pinnedRows}
-        columns={columns.slice(0, 2)} // Use only the first two columns for pinned rows
-        pageSize={5}
-        rowsPerPageOptions={[5]}
-        autoHeight
-        components={{
-          header: {
-            cell: ({ colDef }) => (
-              <div className={`pinned-header ${colDef.pinned || ''}`}>
-                {colDef.headerName}
-              </div>
-            ),
-          },
-        }}
-      />
+    <div>
+      {Array.from(new Set(columns.map((column) => column.group))).map((group) => (
+        isGroupVisible(group) && (
+          <FormControlLabel
+            key={group}
+            control={
+              <Checkbox
+                checked={isGroupVisible(group)}
+                onChange={() => handleCheckboxChange(group)}
+              />
+            }
+            label={`Toggle ${group} Group`}
+          />
+        )
+      ))}
+      {columns.map((column) => (
+        <FormControlLabel
+          key={column.id}
+          control={
+            <Checkbox
+              checked={visibleColumns.includes(column.id)}
+              onChange={() => handleCheckboxChange(column.id)}
+            />
+          }
+          label={column.label}
+        />
+      ))}
+      <TableContainer component={Paper}>
+        <Table>
+          <TableHead>
+            <TableRow>
+              {columns
+                .filter((column) => visibleColumns.includes(column.id))
+                .map((column) => (
+                  <TableCell key={column.id}>{column.label}</TableCell>
+                ))}
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {data.map((row, index) => (
+              <TableRow key={index}>
+                {columns
+                  .filter((column) => visibleColumns.includes(column.id))
+                  .map((column) => (
+                    <TableCell key={column.id}>{row[column.id]}</TableCell>
+                  ))}
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </TableContainer>
     </div>
   );
-}
+};
+
+export default HideShowColumnsTable;

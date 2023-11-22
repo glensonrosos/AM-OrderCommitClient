@@ -1,7 +1,7 @@
 import * as api from '../api';
 import { GET_ORDER_ITEMS_POID,GET_ORDER_ITEM_IMAGE,DELETE_ORDER_ITEM,CREATE_ORDER_ITEM_POID,
     START_LOADING_HOME,END_LOADING_HOME, UPDATE_CELL_ORDER_ITEM,
-    UPDATE_CELL_ORDER_ITEM_IMAGE,GET_ORDER_ITEM_STATUS_OPEN } from '../constant/actionTypes';
+    UPDATE_CELL_ORDER_ITEM_IMAGE,GET_ORDER_ITEM_STATUS_OPEN,UPDATE_CELL_ORDER_ITEM_BULK,CLEAR_DATE_CELL_ORDER_ITEM_BULK } from '../constant/actionTypes';
 
 export const getOrderItems = (id) => async (dispatch) =>{
     try{
@@ -60,6 +60,34 @@ export const updateCellOrderItem = (id,newOrderitem) => async (dispatch) =>{
         dispatch({type: UPDATE_CELL_ORDER_ITEM, payload: data});
 
        // dispatch({type: END_LOADING_HOME});
+
+    }catch(error){
+        console.log(error);
+    }
+}
+
+export const updateCellOrderItemInBulk = (details) => async (dispatch) =>{
+    try{
+        dispatch({type: START_LOADING_HOME});
+        const { data } = await api.updateCellOrderItemInBulk(details);
+
+        dispatch({type: UPDATE_CELL_ORDER_ITEM_BULK, payload: data});
+
+        dispatch({type: END_LOADING_HOME});
+
+    }catch(error){
+        console.log(error);
+    }
+}
+
+export const clearDateOrderItemInBulk = (details) => async (dispatch) =>{
+    try{
+        dispatch({type: START_LOADING_HOME});
+        const { data } = await api.clearDateOrderItemInBulk(details);
+
+        dispatch({type: CLEAR_DATE_CELL_ORDER_ITEM_BULK, payload: data});
+
+        dispatch({type: END_LOADING_HOME});
 
     }catch(error){
         console.log(error);

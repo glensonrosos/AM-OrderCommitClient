@@ -187,11 +187,18 @@ export default function StickyHeadTable() {
       setSnackbar({ children: `Invalid Date, `, severity: 'error' });
       flag = false;
     }
+
+    const newVal = input.poNumber.toUpperCase();
+
+    if(purchaseOrders.find(po => po.poNumber === newVal)){
+        setSnackbar({ children: `PO Number inputed already exist`, severity: 'error' });
+        flag = false;
+    }
+   
     
     const user = JSON.parse(localStorage.getItem('profile'));
 
     const newUser = `${user?.result?.firstname} ${user?.result?.lastname}`;
-    
 
     if(flag){ 
       dispatch(createPO({...input,poNumber:input.poNumber.toUpperCase(),editedBy:newUser},navigate));
@@ -234,10 +241,10 @@ export default function StickyHeadTable() {
     const intervalId = setInterval(() => {
         dispatch(getPOs(queryPage));
         console.log('called getPOs table');
-    }, 180000); // 3 minutes
+    }, 180000); // 3 minute
+
     return () => clearInterval(intervalId);
 }, [dispatch]);
-
 
   const searchOptions = [
     {id: 'poNumber', label: 'PO #'},
@@ -280,7 +287,7 @@ export default function StickyHeadTable() {
         reqDepartments = po?.reqAttDepts.map(dept=> dept.department).join(', ');
       }
       
-      const link = `/../purchase-order-detail/${po._id}`;
+      const link = `/../purchase-order-detail/${po?._id}`;
 
       rowsData.push(createData(
         <Link variant="p" href={link}>{po?.poNumber}</Link>, 

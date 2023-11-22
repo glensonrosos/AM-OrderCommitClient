@@ -1,8 +1,12 @@
 import React,{useState,useEffect} from 'react';
 import { DataGrid,GridToolbarExport,GridToolbarContainer,GridToolbarColumnsButton } from '@mui/x-data-grid';
 import {Snackbar,Alert,Button,Box,Tooltip,Switch,ImageList,Stack,Backdrop,CircularProgress, Typography,Select,
-        MenuItem,Table,TableHead,TableRow,TableCell,TableBody,Paper,TableContainer, Checkbox,FormControl,InputLabel} from '@mui/material';
+        MenuItem,Table,TableHead,TableRow,TableCell,TableBody,Paper,TableContainer, Checkbox,FormControl,InputLabel,FormControlLabel} from '@mui/material';
 import {Delete,Image,Add,FileDownload, DeleteSweep, DeleteForever, CancelPresentation, Download, Upload, EditCalendar, Check, Save} from '@mui/icons-material';
+import Accordion from '@mui/material/Accordion';
+import AccordionSummary from '@mui/material/AccordionSummary';
+import AccordionDetails from '@mui/material/AccordionDetails';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import Grid from '@mui/material/Unstable_Grid2';
 
 // xlsx
@@ -16,7 +20,8 @@ import { DatePicker } from '@mui/x-date-pickers';
 import moment from 'moment';
 
 import { useDispatch,useSelector } from 'react-redux';
-import { getOrderItems,getOrderItemsNoLoading,createOrderItem,updateCellOrderItem,getCountOrderItemStatusOpen,deleteOrderItem,getOrderItemImage } from '../../../actions/orderitems';
+import { getOrderItems,getOrderItemsNoLoading,createOrderItem,updateCellOrderItem,getCountOrderItemStatusOpen,deleteOrderItem,
+  getOrderItemImage,updateCellOrderItemInBulk,clearDateOrderItemInBulk } from '../../../actions/orderitems';
 import {updateCellEditedBy,updatePOByAuto} from '../../../actions/purchaseOrders';
 import NoImage from '../../images/NoImage.jpeg'
 
@@ -228,13 +233,22 @@ export default function ServerSidePersistence() {
   });
   const [openDialogDeleteRow, setOpenDialogDeleteRow] = useState(false);
   const handleOpenDialogDeleteRow = (rowSelected) => {
-    
     setToBeDeleteRow({rowSelected});
     setOpenDialogDeleteRow(true);
   };
+
+  const [openDialogClearDate, setOpenDialogClearDate] = useState(false);
+  const handleOpenDialogClearDate = (rowSelected) => {
+    setOpenDialogClearDate(true);
+  };
+
   const handleCloseDialogDeleteRow = () => {
     setToBeDeleteRow({rowSelected:null});
     setOpenDialogDeleteRow(false);
+  };
+
+  const handleCloseDialogClearDate = () => {
+    setOpenDialogClearDate(false);
   };
 
   const [openDialogEditBulk, setOpenDialogEditBulk] = useState(false);
@@ -1009,12 +1023,161 @@ export default function ServerSidePersistence() {
 
   // DATA TABLE FOR BULK EDIT --START
   const columnsTable = [
-    { id: 'itemCode', label: 'Item Code', minWidth: 170 },
-    { id: 'description', label: 'Description', minWidth: 100 },
-    { id: 'qty', label: 'Qty', minWidth: 100 },
-    { id: 'amArtwork', label: 'With Artwork', minWidth: 100 },
-    { id: '_id', label: 'Selection', minWidth: 170 },
+    { id: 'itemCode', label: 'Item Code', minWidth: 90,group: 'AM Department' },
+    { id: 'description', label: 'Description', minWidth: 150,group: 'AM Department' },
+    { id: 'qty', label: 'Qty', minWidth: 50 ,type: 'number',group: 'AM Department'},
+    { id: 'amArtwork', label: 'With Artwork', minWidth: 20,type: 'boolean',group: 'AM Department' },
+    { id: 'patternReleasing', label: 'Pattern Releasing',minWidth: 50, type: 'date',group: 'PD Department'},
+    { id: 'productSpecs', label: 'Product Specs', minWidth: 50, type: 'date',group: 'PD Department'},
+    { id: 'packagingSpecs', label: 'Packaging Specs', minWidth: 50, type: 'date',group: 'PD Department'},
+    { id: 'pdMoldAvailability', label: 'Mold Availability', minWidth: 20,type: 'date',group: 'PD Department'},
+    { id: 'pdSampleReference', label: 'Sample Reference', minWidth: 50, type: 'date',group: 'PD Department'},
+    { id: 'firstCarcass', label: 'First Carcass', minWidth: 50, type: 'date',group: 'Purchasing Department'},
+    { id: 'completionCarcass', label: 'Completion Carcass',minWidth: 50, type: 'date',group: 'Purchasing Department'},
+    { id: 'firstArtwork', label: 'First Artwork',minWidth: 50, type: 'date',group: 'Purchasing Department'},
+    { id: 'completionArtwork', label: 'Completion Artwork', minWidth: 50, type: 'date',group: 'Purchasing Department'},
+    { id: 'firstPackagingMaterial', label: 'First Packaging Material', minWidth: 50, type: 'date',group: 'Purchasing Department'},
+    { id: 'completionPackagingMaterial', label: 'Completion Packaging Material',minWidth: 50, type: 'date',group: 'Purchasing Department'},
+    { id: 'puMoldAvailability', label: 'Mold Availability',minWidth: 50,type: 'boolean',group: 'Purchasing Department'},
+    { id: 'carcass', label: 'Carcass', minWidth: 50, type: 'date',group: 'Production Department'},
+    { id: 'artwork', label: 'Artwork', minWidth: 50, type: 'date',group: 'Production Department'},
+    { id: 'packagingMaterial', label: 'Packaging Material', minWidth: 50, type: 'date',group: 'Production Department'},
+    { id: 'crd', label: 'CRD', minWidth: 50, type: 'date',group: 'Production Department'},
+    { id: 'poptDate', label: 'POPT Date', minWidth: 50, type: 'date',group: 'QA Department'},
+    { id: 'qaSampleReference', label: 'Sample Reference',minWidth: 50, type: 'boolean',group: 'QA Department'},
+    { id: 'psiDate', label: 'PSI Date', minWidth: 50, type: 'date',group: 'QA Department'},
+    { id: '_id', label: 'Select All', minWidth: 20 },
   ];
+
+  /*
+   <CustomGroupHeader colSpan={4} label="AM Department" />
+                          <CustomGroupHeader colSpan={5} label="PD Department" />
+                          <CustomGroupHeader colSpan={7} label="Purchasing Department" />
+                          <CustomGroupHeader colSpan={4} label="Production Department" /> 
+                          <CustomGroupHeader colSpan={3} label="QA Department" /> */
+
+  const [groupHeaderCol,setGroupHeaderCol] = useState({
+    am:4,
+    pd:5,
+    pu:7,
+    prod:4,
+    qa:3
+  })
+
+  const CustomGroupHeader = ({ colSpan, label, show }) => (
+ 
+    <TableCell align="left" colSpan={colSpan} style={{fontWeight: 'bold', textAlign: 'center', display: show ? '-moz-initial' : 'none'}} >
+      {label}
+    </TableCell>
+    
+  );
+
+  const [visibleColumns, setVisibleColumns] = useState(columnsTable.map((columnT) => columnT.id));
+
+  const handleCheckboxChange = (columnId) => {
+    setVisibleColumns((prevVisibleColumns) => {
+      if (prevVisibleColumns.includes(columnId)) {
+        
+        switch(columnId){
+          case 'description':
+          case 'qty':
+          case 'amArtwork': 
+            setGroupHeaderCol({
+              ...groupHeaderCol,
+              am: (groupHeaderCol.am-1)
+            }); break;  
+          case 'patternReleasing':
+          case 'productSpecs':
+          case 'packagingSpecs':
+          case 'pdMoldAvailability':
+          case 'pdSampleReference': 
+            setGroupHeaderCol({
+              ...groupHeaderCol,
+              pd: (groupHeaderCol.pd-1)
+            }); break;
+          case 'firstCarcass':
+          case 'completionCarcass':
+          case 'firstArtwork':
+          case 'completionArtwork':
+          case 'firstPackagingMaterial':
+          case 'completionPackagingMaterial':
+          case 'puMoldAvailability':
+            setGroupHeaderCol({
+              ...groupHeaderCol,
+              pu: (groupHeaderCol.pu-1)
+            }); break;
+          case 'carcass':
+          case 'artwork':
+          case 'packagingMaterial':
+          case 'crd':
+            setGroupHeaderCol({
+              ...groupHeaderCol,
+              prod: (groupHeaderCol.prod-1)
+            }); break;
+          case 'poptDate':
+          case 'qaSampleReference':
+          case 'psiDate':
+            setGroupHeaderCol({
+              ...groupHeaderCol,
+              qa: (groupHeaderCol.qa-1)
+            }); break;
+          default: break;
+        }
+
+
+        return prevVisibleColumns.filter((col) => col !== columnId);
+      } else {
+
+        switch(columnId){
+          case 'description':
+          case 'qty':
+          case 'amArtwork': 
+            setGroupHeaderCol({
+              ...groupHeaderCol,
+              am: (groupHeaderCol.am+1)
+            }); break;  
+          case 'patternReleasing':
+          case 'productSpecs':
+          case 'packagingSpecs':
+          case 'pdMoldAvailability':
+          case 'pdSampleReference': 
+            setGroupHeaderCol({
+              ...groupHeaderCol,
+              pd: (groupHeaderCol.pd+1)
+            }); break;
+          case 'firstCarcass':
+          case 'completionCarcass':
+          case 'firstArtwork':
+          case 'completionArtwork':
+          case 'firstPackagingMaterial':
+          case 'completionPackagingMaterial':
+          case 'puMoldAvailability':
+            setGroupHeaderCol({
+              ...groupHeaderCol,
+              pu: (groupHeaderCol.pu+1)
+            }); break;
+          case 'carcass':
+          case 'artwork':
+          case 'packagingMaterial':
+          case 'crd':
+            setGroupHeaderCol({
+              ...groupHeaderCol,
+              prod: (groupHeaderCol.prod+1)
+            }); break;
+          case 'poptDate':
+          case 'qaSampleReference':
+          case 'psiDate':
+            setGroupHeaderCol({
+              ...groupHeaderCol,
+              qa: (groupHeaderCol.qa+1)
+            }); break;
+          default: break;
+        }
+
+        return [...prevVisibleColumns, columnId];
+      }
+    });
+  };
 
   // DATA TABLE FOR BULK EDIT --END
 
@@ -1441,6 +1604,7 @@ export default function ServerSidePersistence() {
     
 
   const handleChangeEditCellInBulkDepartment = (e) => {
+    setSelectedRowsEditCellInBulk([])
     setValueEditCellInBulk(e.target.value);
     setDateBulk(null)
     //setSnackbar({ children: 'Successfully update cell', severity: 'success' });
@@ -1478,32 +1642,114 @@ export default function ServerSidePersistence() {
 
   const handleSaveEditCellInBulk = async () =>{
 
-    // if(currentStatus !== 'OPEN'){
-    //   setSnackbar({ children: `disable from edit due to status ${currentStatus}`, severity: 'warning' });
-    //   return;
-    // }
+    if(currentStatus !== 'OPEN'){
+      setSnackbar({ children: `disable from edit due to status ${currentStatus}`, severity: 'warning' });
+      return;
+    }
 
-    // const newUser = `${user?.result?.firstname} ${user?.result?.lastname}`;
-    // const edit = {
-    //   puCom:{
-    //     editedBy: newUser,
-    //     updatedAt: moment(),
-    //   }
-    // }
-    // await dispatch(updateCellEditedBy(id,{edit}));
-    // // action to update
-    // await dispatch(getCountOrderItemStatusOpen(id));
+    //check dept
+    const comDepartment = user?.result?.department?.department;
+    if(comDepartment !== 'AM' && (comDepartment.toLowerCase()) !== valueEditCellInBulk){
+      setSnackbar({ children: `you are not allowed to edit others department commitment`, severity: 'warning' });
+      return;
+    }
 
-    // setSnackbar({ children: 'Successfully update cell', severity: 'success' });
+    // no selection
+    if(selectedRowsEditCellInBulk.length === 0){
+      setSnackbar({ children: `no selected rows`, severity: 'warning' });
+      return;
+    }
+    else if(!valueColumnEditCellInBulk){
+      setSnackbar({ children: `no Column selectted to edit`, severity: 'warning' });
+      return;
+    }else if(moment(dateBulk) <= moment(currentPO.dateIssued) || moment(dateBulk) >= moment(currentPO.shipDate)){ //glensongwapo
+      setSnackbar({ children: `date inputed is invalid`, severity: 'warning' });
+      return;
+    }
 
-    //selectedRowsEditCellInBulk => orderitem ids
-    //valueColumnEditCellInBulk => cell selected
-    // if(valueColumnEditCellInBulk === 'puMoldAvailability' || valueColumnEditCellInBulk === 'qaSampleReference')
-    //   alert(pdYesNo + 'yes/no');
-    // else
-    //   alert(dateBulk + 'date');
-    console.log(selectedRowsEditCellInBulk);
-    console.log(dateBulk);
+    // success
+    if(valueColumnEditCellInBulk === 'puMoldAvailability' || valueColumnEditCellInBulk === 'qaSampleReference'){
+      await dispatch(updateCellOrderItemInBulk({ids:selectedRowsEditCellInBulk,column:valueColumnEditCellInBulk,val:pdYesNo}));
+      
+    }else{
+      await dispatch(updateCellOrderItemInBulk({ids:selectedRowsEditCellInBulk,column:valueColumnEditCellInBulk,val:dateBulk}));                                                                                                                    
+    }
+    
+
+    const newUser = `${user?.result?.firstname} ${user?.result?.lastname}`;
+    const edit = {
+      [valueEditCellInBulk+"Com"]:{
+        editedBy: newUser,
+        updatedAt: moment(),
+      }
+    }
+    await dispatch(getOrderItemsNoLoading(id));
+
+   await dispatch(updateCellEditedBy(id,{edit}));
+   //action to update
+   await dispatch(getCountOrderItemStatusOpen(id));
+
+    setSnackbar({ children: 'Successfully edit selected rows', severity: 'success' });
+    //close and clear
+
+    // clear
+    setValueEditCellInBulk(null);
+    setValueColumnEditCellInBulk(null);
+    setPdYesNo(1);
+    setDateBulk(null);
+    setSelectAllEditCellInBulk(false);
+  }
+
+  const handleClearDateOrderItemInBulk = async () =>{
+
+    if(currentStatus !== 'OPEN'){
+      setSnackbar({ children: `disable from edit due to status ${currentStatus}`, severity: 'warning' });
+      return;
+    }
+
+    // no selection
+    if(selectedRowsEditCellInBulk.length === 0){
+      setSnackbar({ children: `no selection selection`, severity: 'warning' });
+      return;
+    }
+    else if(!valueColumnEditCellInBulk){
+      setSnackbar({ children: `no column selected to edit`, severity: 'warning' });
+      return;
+    }
+
+    // success
+    if(valueColumnEditCellInBulk === 'puMoldAvailability' || valueColumnEditCellInBulk === 'qaSampleReference'){
+      setSnackbar({ children: `column selected is dont have a date values`, severity: 'warning' });
+      return;
+    }else{
+      await dispatch(clearDateOrderItemInBulk({ids:selectedRowsEditCellInBulk,column:valueColumnEditCellInBulk}));                                                                                                                    
+    }
+    
+
+    const newUser = `${user?.result?.firstname} ${user?.result?.lastname}`;
+    const edit = {
+      [valueEditCellInBulk+"Com"]:{
+        editedBy: newUser,
+        updatedAt: moment(),
+      }
+    }
+    await dispatch(getOrderItemsNoLoading(id));
+
+    await dispatch(updateCellEditedBy(id,{edit}));
+   //action to update
+    await dispatch(getCountOrderItemStatusOpen(id));
+
+    setSnackbar({ children: 'Successfully clear date of selected row', severity: 'success' });
+    //close and clear
+
+    // clear
+    setValueEditCellInBulk(null);
+    setValueColumnEditCellInBulk(null);
+    setPdYesNo(1);
+    setDateBulk(null);
+    setSelectAllEditCellInBulk(false);
+    //close diaglog clear date
+    handleCloseDialogClearDate();
   }
 
   // Edit Cell in Bulk End
@@ -1688,6 +1934,30 @@ export default function ServerSidePersistence() {
           </Dialog>
           {/* Dialog for delete row */}
 
+          {/* Dialog for delete row */}
+          <Dialog
+            open={openDialogClearDate}
+            onClose={handleCloseDialogClearDate}
+            aria-labelledby="alert-dialog-title"
+            aria-describedby="alert-dialog-description"
+          >
+            <DialogTitle id="alert-dialog-title">
+              {"Are you sure, you want to clear Dates of selected rows ?"}
+            </DialogTitle>
+            <DialogContent>
+              <DialogContentText id="alert-dialog-description">
+                Note: once deleted it will never be undo.
+              </DialogContentText>
+            </DialogContent>
+            <DialogActions>
+              <Button variant="contained" color="error" startIcon={<CancelPresentation/>} onClick={handleCloseDialogClearDate}>Cancel</Button>
+              <Button variant="contained" color="info" startIcon={<DeleteForever/>} onClick={handleClearDateOrderItemInBulk} autoFocus>
+                Clear Date
+              </Button>
+            </DialogActions>
+          </Dialog>
+          {/* Dialog for delete row */}
+
           {/* Dialog bulk edit */}
           <Dialog
             open={openDialogEditBulk}
@@ -1702,18 +1972,221 @@ export default function ServerSidePersistence() {
               Edit Cell in Bulk
             </DialogTitle>
             <DialogContent>
-              <Box sx={{ maxHeight: 800, width: '100%',mt:1 }}>
+              <Box sx={{ maxHeight: 1200, width: '100%',mt:1 }}>
                 <Paper sx={{ width: '100%', overflow: 'hidden' }}>
-                  <TableContainer sx={{ maxHeight: 700 }}>
+                <div style={{marginBlock:10}}>
+                {/* defaultExpanded */}
+                  <Accordion  sx={{
+                      backgroundColor: "#283c50ad",
+                      color:"#fff"
+                  }}>
+                    <AccordionSummary
+                    expandIcon={<ExpandMoreIcon />}
+                    aria-controls="panel1a-content"
+                    id="panel1a-header"
+                    >
+                      <Typography>Show / Hide Columns</Typography>
+                  </AccordionSummary>
+                  <AccordionDetails>
+                   {/* hide show column */}
+                  <Grid container spacing={2} justifyContent="flex-start" direction='row' sx={{mb:2}}>
+                    {/* AM */}
+                    <Grid >  
+                      <Typography>AM Department</Typography>
+                        <Box sx={{ display: 'flex', flexDirection: 'column', ml: 3 }}>
+                          <FormControlLabel
+                            label="Description"
+                            control={<Checkbox
+                            checked={visibleColumns.includes('description')}
+                            onChange={() => handleCheckboxChange('description')} />}
+                          />
+                          <FormControlLabel
+                            label="Qty"
+                            control={<Checkbox
+                              checked={visibleColumns.includes('qty')}
+                              onChange={() => handleCheckboxChange('qty')} />}
+                          />
+                           <FormControlLabel
+                            label="With Artwork"
+                            control={<Checkbox
+                              checked={visibleColumns.includes('amArtwork')}
+                              onChange={() => handleCheckboxChange('amArtwork')} />}
+                          />
+                        </Box>
+                    </Grid>
+                    {/* PD */}
+                    <Grid >  
+                      <Typography>PD Department</Typography>
+                        <Box sx={{ display: 'flex', flexDirection: 'column', ml: 3 }}>
+                          <FormControlLabel
+                            label="Pattern Releasing"
+                            control={<Checkbox
+                            checked={visibleColumns.includes('patternReleasing')}
+                            onChange={() => handleCheckboxChange('patternReleasing')} />}
+                          />
+                          <FormControlLabel
+                            label="Product Specs"
+                            control={<Checkbox
+                              checked={visibleColumns.includes('productSpecs')}
+                              onChange={() => handleCheckboxChange('productSpecs')} />}
+                          />
+                           <FormControlLabel
+                            label="Packaging Specs"
+                            control={<Checkbox
+                              checked={visibleColumns.includes('packagingSpecs')}
+                              onChange={() => handleCheckboxChange('packagingSpecs')} />}
+                          />
+                          <FormControlLabel
+                            label="Mold Availability"
+                            control={<Checkbox
+                              checked={visibleColumns.includes('pdMoldAvailability')}
+                              onChange={() => handleCheckboxChange('pdMoldAvailability')} />}
+                          />
+                          <FormControlLabel
+                            label="Sample Reference"
+                            control={<Checkbox
+                              checked={visibleColumns.includes('pdSampleReference')}
+                              onChange={() => handleCheckboxChange('pdSampleReference')} />}
+                          />
+                        </Box>
+                    </Grid>
+                    {/* PU */}
+                    <Grid >  
+                      <Typography>Purchasing Department</Typography>
+                        <Box sx={{ display: 'flex', flexDirection: 'column', ml: 3 }}>
+                          <FormControlLabel
+                            label="First Carcass"
+                            control={<Checkbox
+                            checked={visibleColumns.includes('firstCarcass')}
+                            onChange={() => handleCheckboxChange('firstCarcass')} />}
+                          />
+                          <FormControlLabel
+                            label="Completion Carcass"
+                            control={<Checkbox
+                              checked={visibleColumns.includes('completionCarcass')}
+                              onChange={() => handleCheckboxChange('completionCarcass')} />}
+                          />
+                           <FormControlLabel
+                            label="First Artwork"
+                            control={<Checkbox
+                              checked={visibleColumns.includes('firstArtwork')}
+                              onChange={() => handleCheckboxChange('firstArtwork')} />}
+                          />
+                          <FormControlLabel
+                            label="Completion Artwork"
+                            control={<Checkbox
+                              checked={visibleColumns.includes('completionArtwork')}
+                              onChange={() => handleCheckboxChange('completionArtwork')} />}
+                          />
+                          <FormControlLabel
+                            label="First Packaging Material"
+                            control={<Checkbox
+                              checked={visibleColumns.includes('firstPackagingMaterial')}
+                              onChange={() => handleCheckboxChange('firstPackagingMaterial')} />}
+                          />
+                           <FormControlLabel
+                            label="Completion Packaging Material"
+                            control={<Checkbox
+                              checked={visibleColumns.includes('completionPackagingMaterial')}
+                              onChange={() => handleCheckboxChange('completionPackagingMaterial')} />}
+                          />
+                          <FormControlLabel
+                            label="Mold Availabilty"
+                            control={<Checkbox
+                              checked={visibleColumns.includes('puMoldAvailability')}
+                              onChange={() => handleCheckboxChange('puMoldAvailability')} />}
+                          />
+                        </Box>
+                    </Grid>
+                    {/* PROD */}
+                    <Grid >  
+                      <Typography>Production Department</Typography>
+                        <Box sx={{ display: 'flex', flexDirection: 'column', ml: 3 }}>
+                          <FormControlLabel
+                            label="Carcass"
+                            control={<Checkbox
+                            checked={visibleColumns.includes('carcass')}
+                            onChange={() => handleCheckboxChange('carcass')} />}
+                          />
+                          <FormControlLabel
+                            label="Artwork"
+                            control={<Checkbox
+                              checked={visibleColumns.includes('artwork')}
+                              onChange={() => handleCheckboxChange('artwork')} />}
+                          />
+                           <FormControlLabel
+                            label="Packaging Material"
+                            control={<Checkbox
+                              checked={visibleColumns.includes('packagingMaterial')}
+                              onChange={() => handleCheckboxChange('packagingMaterial')} />}
+                          />
+                          <FormControlLabel
+                            label="CRD"
+                            control={<Checkbox
+                              checked={visibleColumns.includes('crd')}
+                              onChange={() => handleCheckboxChange('crd')} />}
+                          />
+                        </Box>
+                    </Grid>
+                    {/* QA */}
+                    <Grid >  
+                        <Typography>QA Department</Typography>
+                        <Box sx={{ display: 'flex', flexDirection: 'column', ml: 3 }}>
+                          <FormControlLabel
+                            label="POPT Date"
+                            control={<Checkbox
+                            checked={visibleColumns.includes('poptDate')}
+                            onChange={() => handleCheckboxChange('poptDate')} />}
+                          />
+                          <FormControlLabel
+                            label="Sample Reference"
+                            control={<Checkbox
+                              checked={visibleColumns.includes('qaSampleReference')}
+                              onChange={() => handleCheckboxChange('qaSampleReference')} />}
+                          />
+                           <FormControlLabel
+                            label="PSI Date"
+                            control={<Checkbox
+                              checked={visibleColumns.includes('psiDate')}
+                              onChange={() => handleCheckboxChange('psiDate')} />}
+                          />
+                        </Box>
+                    </Grid>
+                  </Grid>
+                      {/* hide show column */}
+                  </AccordionDetails>
+                  </Accordion>
+                  </div>
+                  
+                  <TableContainer sx={{ maxHeight: 500 }}>
                       <Table stickyHeader aria-label="sticky table" size='small'>
-                      <TableHead>
-                          <TableRow sx={{"& .MuiTableCell-head": {
-                                        color: "white",
-                                        backgroundColor: "#6F1E51"
-                                    }}}>
+                        <TableHead>
+                          <TableRow 
+                          sx={{"& .MuiTableCell-head": {
+                                color: "white",
+                                backgroundColor: "#6F1E51",
+                                border: '1px solid #e0e0e0',
+                                zIndex:900
+                            }}}
+                            >
+                            <CustomGroupHeader colSpan={groupHeaderCol.am} show={groupHeaderCol.am} label="AM Department" />
+                            <CustomGroupHeader colSpan={groupHeaderCol.pd} show={groupHeaderCol.pd} label="PD Department" />
+                            <CustomGroupHeader colSpan={groupHeaderCol.pu} show={groupHeaderCol.pu}label="Purchasing Department" />
+                            <CustomGroupHeader colSpan={groupHeaderCol.prod} show={groupHeaderCol.prod} label="Production Department" /> 
+                            <CustomGroupHeader colSpan={groupHeaderCol.qa} show={groupHeaderCol.qa} label="QA Department" /> 
+                         </TableRow>
+                          <TableRow  sx={{"& .MuiTableCell-head": {
+                                color: "white",
+                                backgroundColor: "#6F1E51",
+                                border: '1px solid #e0e0e0',
+                                paddingTop:5
+                            }}}>
                           {
-                            columnsTable.map((columnTable) => (
-                              columnTable.label === 'Selection' ?
+
+                            columnsTable
+                            .filter((column) => visibleColumns.includes(column.id))
+                            .map((columnTable) => (
+                              columnTable.label === 'Select All' ?
                                 <TableCell
                                   key={columnTable.id}
                                   align={columnTable.align}
@@ -1734,15 +2207,17 @@ export default function ServerSidePersistence() {
                                 >
                                   {columnTable.label}
                                 </TableCell>
-                          ))}
+                          ))
+                            }
                           </TableRow>
                       </TableHead>
                       <TableBody>
-                          {rows
-                          .map((row,i) => {
-                              return (
-                              <TableRow hover role="checkbox" tabIndex={-1} key={i}>
-                                  {columnsTable.map((columnTable) => {
+                          {
+                          rows.map((row, i) => (
+                            <TableRow  hover role="checkbox" tabIndex={-1} key={i}>
+                              {columnsTable
+                                .filter((columnTable) => visibleColumns.includes(columnTable.id))
+                                .map((columnTable) => {
                                   const value = row[columnTable.id];
                                     const tableCellData = () => {
                                       if(columnTable.id === '_id')
@@ -1751,16 +2226,18 @@ export default function ServerSidePersistence() {
                                           onChange={() => handleCheckboxChangeEditCellInBulk(row.id)}
                                           inputProps={{ 'aria-label': 'controlled' }}
                                         />
-                                      else if(columnTable.id === 'amArtwork')
+                                      else if(columnTable.type === 'boolean')
                                         return value === 0 ? 'NO' : 'YES'
-                                      else if(columnTable.format && typeof value === 'number')
-                                        return columnTable.format(value)
+                                      else if(columnTable.type === 'number')
+                                        return Number(value)
+                                      else if(columnTable.type === 'date')
+                                        return value ? moment(new Date(value)).format('L') : null
                                       else
                                         return value
                                     }
 
                                     return (
-                                      <TableCell key={columnTable.id} align={columnTable.align}>
+                                      <TableCell key={columnTable.id} align={columnTable.align} style={{ border: '1px solid #e0e0e0' }}>
                                       {/* {columnTable.format && typeof value === 'number'
                                           ? columnTable.format(value)
                                           : value} */}
@@ -1769,16 +2246,15 @@ export default function ServerSidePersistence() {
                                     );
 
                                   })}
-                              </TableRow>
-                              );
-                          })}
+                            </TableRow>
+                          ))}
                       </TableBody>
                       </Table>
                   </TableContainer>
                   </Paper>
               </Box>
-              <Box sx={{ maxHeight: 600, width: '100%',mt:5}}>
-              <Grid container spacing={2} justifyContent="center" sx={{mb:2}}>  
+              <Box sx={{ width: '100%',mt:5}}>
+              <Grid container spacing={2} justifyContent="center" >  
                 <Grid xs={6} md={3} lg={3}>
                   <Grid container spacing={4} justifyContent="flex-start">
                     <FormControl component='div' variant='outlined' sx={{width:'70%',ml:5}}>
@@ -1820,11 +2296,15 @@ export default function ServerSidePersistence() {
                         <Typography sx={{mt:3}}>
                           Note: If the selected row already have a date commited, it will skip this edit action.
                         </Typography>
+                        {/* CLEAR BUTTON */}
+                        { comDepartment === 'AM' && 
+                          <Button variant="contained" color="warning" startIcon={<CancelPresentation/>} onClick={handleOpenDialogClearDate}>CLEAR DATES</Button>
+                        }
                       </FormControl>
                       <div style={{display: 
                         valueColumnEditCellInBulk === 'puMoldAvailability' || valueColumnEditCellInBulk === 'qaSampleReference' 
                         ? 'none' : 'block'}}>
-                        <DatePicker label="Date Bulk Edit" maxDate={moment().add(3,'y')} minDate={moment('2000','YYYY')}  onChange={(e)=>setDateBulk(e)} value={moment(dateBulk)}/>
+                        <DatePicker label="Date Bulk Edit" maxDate={moment().add(2,'y')} minDate={moment().add(-1,'y')}  onChange={(e)=>setDateBulk(e)} value={moment(dateBulk)}/>
                       </div>
                       <div style={{display: 
                         valueColumnEditCellInBulk === 'puMoldAvailability' || valueColumnEditCellInBulk === 'qaSampleReference' 
@@ -1847,9 +2327,9 @@ export default function ServerSidePersistence() {
               </Box>
             </DialogContent>
             <DialogActions>
-              <Button variant="contained" color="error" startIcon={<CancelPresentation/>} onClick={handleCloseDialogEditBulk}>Cancel</Button>
+              <Button variant="contained" color="error" startIcon={<CancelPresentation/>} onClick={handleCloseDialogEditBulk}>Close Dialog</Button>
               <Button variant="contained" color="info" startIcon={<Save/>} onClick={handleSaveEditCellInBulk} autoFocus>
-                Save Changes
+                Execute Changes
               </Button>
             </DialogActions>
           </Dialog>

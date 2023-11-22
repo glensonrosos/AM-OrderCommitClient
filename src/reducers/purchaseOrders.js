@@ -7,7 +7,8 @@ const defaultState = {
     currentPage:1,
     numberOfPages:1,
     total:1,
-    reqAttDepts:null
+    reqAttDepts:null,
+    message:null,
 }
 
 export default(state = defaultState,action) => {
@@ -40,13 +41,19 @@ export default(state = defaultState,action) => {
                 purchaseOrders : state.purchaseOrders.map((po)=> po._id === action.payload._id ? action.payload : po) 
             }
         case CREATE_PO:
-            return {
-                ...state,
-                purchaseOrders:[
-                    ...state.purchaseOrders,
-                    action.payload
-                ]
-            };
+            if(action.payload.message === 'success')
+                return {
+                    ...state,
+                    purchaseOrders:[
+                        ...state.purchaseOrders,
+                        action.payload.po
+                    ]
+                };
+            else
+                return {
+                    ...state,
+                    message: 'PO Number exist'
+                }
         case START_LOADING_HOME:
             return{
                 ...state,

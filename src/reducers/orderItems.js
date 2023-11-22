@@ -1,11 +1,12 @@
 import { GET_ORDER_ITEMS_POID,GET_ORDER_ITEM_IMAGE,DELETE_ORDER_ITEM,CREATE_ORDER_ITEM_POID,
     UPDATE_CELL_ORDER_ITEM,START_LOADING_HOME,END_LOADING_HOME, UPDATE_CELL_ORDER_ITEM_IMAGE,
-    GET_ORDER_ITEM_STATUS_OPEN } from "../constant/actionTypes";
+    GET_ORDER_ITEM_STATUS_OPEN, UPDATE_CELL_ORDER_ITEM_BULK,CLEAR_DATE_CELL_ORDER_ITEM_BULK } from "../constant/actionTypes";
 
 const defaultState = {
     isLoading: false,
     orderItems:[],
-    departmentStatus: null
+    departmentStatus: null,
+    success: false,
 }
 
 
@@ -63,6 +64,8 @@ export default(state = defaultState,action) =>{
                 ...state,
                 departmentStatus: action.payload
             }
+        case UPDATE_CELL_ORDER_ITEM_BULK:
+        case CLEAR_DATE_CELL_ORDER_ITEM_BULK:
         default:
             return state;
     }
