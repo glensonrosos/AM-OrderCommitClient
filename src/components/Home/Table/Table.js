@@ -44,7 +44,7 @@ export default function StickyHeadTable() {
   const dispatch = useDispatch();
   const {buyers} = useSelector(state=> state.buyers);
   const {status} = useSelector(state=> state.status);
-  const {isLoading,purchaseOrders,numberOfPages} = useSelector(state=> state.purchaseOrders);
+  const {isLoading,purchaseOrders,numberOfPages,message} = useSelector(state=> state.purchaseOrders);
   const navigate = useNavigate();
 
   const query = useQuery();
@@ -188,24 +188,20 @@ export default function StickyHeadTable() {
       flag = false;
     }
 
-    const newVal = input.poNumber.toUpperCase();
-
-    if(purchaseOrders.find(po => po.poNumber === newVal)){
-        setSnackbar({ children: `PO Number inputed already exist`, severity: 'error' });
-        flag = false;
-    }
-   
-    
     const user = JSON.parse(localStorage.getItem('profile'));
 
     const newUser = `${user?.result?.firstname} ${user?.result?.lastname}`;
 
     if(flag){ 
       dispatch(createPO({...input,poNumber:input.poNumber.toUpperCase(),editedBy:newUser},navigate));
-      handleCloseDialog();  
     }
-
   }
+
+  useEffect(()=>{
+    if(!isLoading && message === 'PO Number exist'){
+      setSnackbar({ children: `PO Number inputed already exist`, severity: 'error' });
+    }
+  },[message,isLoading])
 
   //autocomplete
   //const buyerListSelection = [];
