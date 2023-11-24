@@ -30,6 +30,7 @@ export const getCountOrderItemStatusOpen = (id) => API.get(`/orderitems/${id}/ge
 export const createOrderItem = (newOrderItem) => API.post(`/orderitems`,newOrderItem);
 export const deleteOrderItem = (id) => API.delete(`/orderitems/${id}`);
 export const updateCellOrderItem = (id,newOrderItem) => API.patch(`/orderitems/${id}/updateCell`,newOrderItem);
+export const updateCellOrderItemWithItemCode = (id,itemCode) => API.patch(`/orderitems/${id}/updateCellOrderItemWithItemCode`,itemCode);
 export const updateCellOrderItemInBulk = (details) => API.post(`/orderitems/updateOrderItemInBulk`,details);
 export const clearDateOrderItemInBulk = (details) => API.post(`/orderitems/clearDateOrderItemInBulk`,details);
 

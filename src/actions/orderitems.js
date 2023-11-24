@@ -1,7 +1,8 @@
 import * as api from '../api';
 import { GET_ORDER_ITEMS_POID,GET_ORDER_ITEM_IMAGE,DELETE_ORDER_ITEM,CREATE_ORDER_ITEM_POID,
     START_LOADING_HOME,END_LOADING_HOME, UPDATE_CELL_ORDER_ITEM,
-    UPDATE_CELL_ORDER_ITEM_IMAGE,GET_ORDER_ITEM_STATUS_OPEN,UPDATE_CELL_ORDER_ITEM_BULK,CLEAR_DATE_CELL_ORDER_ITEM_BULK } from '../constant/actionTypes';
+    UPDATE_CELL_ORDER_ITEM_IMAGE,GET_ORDER_ITEM_STATUS_OPEN,UPDATE_CELL_ORDER_ITEM_BULK,CLEAR_DATE_CELL_ORDER_ITEM_BULK,
+    UPDATE_CELL_ORDER_ITEM_ITEM_CODE } from '../constant/actionTypes';
 
 export const getOrderItems = (id) => async (dispatch) =>{
     try{
@@ -10,18 +11,28 @@ export const getOrderItems = (id) => async (dispatch) =>{
         dispatch({type: GET_ORDER_ITEMS_POID,payload:data});
         dispatch({type:END_LOADING_HOME});
     }catch(error){
-        console.log(error.message)
+        console.log(error)
+    }
+}
+
+export const updateCellOrderItemWithItemCode = (id,itemCode) => async (dispatch) =>{
+    try{
+
+        const {data} = await api.updateCellOrderItemWithItemCode(id,itemCode);
+        dispatch({type: UPDATE_CELL_ORDER_ITEM_ITEM_CODE,payload:data});
+        
+    }catch(error){
+        console.log(error)
     }
 }
 
 export const getOrderItemsNoLoading = (id) => async (dispatch) =>{
     try{
-       
         const {data} = await api.getOrderItem(id);
         dispatch({type: GET_ORDER_ITEMS_POID,payload:data});
         
     }catch(error){
-        console.log(error.message)
+        console.log(error)
     }
 }
 
@@ -34,7 +45,7 @@ export const getOrderItemImage = (id) => async (dispatch) =>{
 
         dispatch({type:END_LOADING_HOME});
     }catch(error){
-        console.log(error.message)
+        console.log(error)
     }
 }
 
@@ -125,12 +136,12 @@ export const deleteOrderItem = (id) => async (dispatch) =>{
 export const getCountOrderItemStatusOpen = (id) => async (dispatch) =>{
     try{
         
-        //dispatch({type: START_LOADING_HOME});
+        dispatch({type: START_LOADING_HOME});
         const { data } = await api.getCountOrderItemStatusOpen(id);
 
         dispatch({type: GET_ORDER_ITEM_STATUS_OPEN, payload: data});
 
-       // dispatch({type: END_LOADING_HOME});
+        dispatch({type: END_LOADING_HOME});
        
     }catch(error){
         console.log(error);

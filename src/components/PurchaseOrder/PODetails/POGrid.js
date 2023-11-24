@@ -2,7 +2,7 @@ import React,{useState,useEffect} from 'react';
 import { DataGrid,GridToolbarExport,GridToolbarContainer,GridToolbarColumnsButton } from '@mui/x-data-grid';
 import {Snackbar,Alert,Button,Box,Tooltip,Switch,ImageList,Stack,Backdrop,CircularProgress, Typography,Select,
         MenuItem,Table,TableHead,TableRow,TableCell,TableBody,Paper,TableContainer, Checkbox,FormControl,InputLabel,FormControlLabel} from '@mui/material';
-import {Delete,Image,Add,FileDownload, DeleteSweep, DeleteForever, CancelPresentation, Download, Upload, EditCalendar, Check, Save} from '@mui/icons-material';
+import {Delete,Image,Add,FileDownload, DeleteSweep, DeleteForever, CancelPresentation, Download, Upload, EditCalendar, Save} from '@mui/icons-material';
 import Accordion from '@mui/material/Accordion';
 import AccordionSummary from '@mui/material/AccordionSummary';
 import AccordionDetails from '@mui/material/AccordionDetails';
@@ -21,7 +21,7 @@ import moment from 'moment';
 
 import { useDispatch,useSelector } from 'react-redux';
 import { getOrderItems,getOrderItemsNoLoading,createOrderItem,updateCellOrderItem,getCountOrderItemStatusOpen,deleteOrderItem,
-  getOrderItemImage,updateCellOrderItemInBulk,clearDateOrderItemInBulk } from '../../../actions/orderitems';
+  getOrderItemImage,updateCellOrderItemInBulk,clearDateOrderItemInBulk,updateCellOrderItemWithItemCode } from '../../../actions/orderitems';
 import {updateCellEditedBy,updatePOByAuto} from '../../../actions/purchaseOrders';
 import NoImage from '../../images/NoImage.jpeg'
 
@@ -45,7 +45,7 @@ export default function ServerSidePersistence() {
 
   const dispatch = useDispatch();
   // I STOP HERE... department status
-  const {isLoading,orderItems,departmentStatus} = useSelector(state=> state.orderItems);
+  const {isLoading,orderItems,departmentStatus,message} = useSelector(state=> state.orderItems);
   const {purchaseOrders} = useSelector(state => state.purchaseOrders);
   const [dataGridLoading,setDataGridLoading] = useState(false);
 
@@ -74,7 +74,7 @@ export default function ServerSidePersistence() {
       setDataGridLoading(false);
       setCurrentDeptOpenStatus(departmentStatus);
     }
-  }, [isLoading,orderItems])
+  }, [isLoading,orderItems]);
 
   const handleOpenDialog = (rowSelected) => {
       setDataGridLoading(true);
@@ -739,7 +739,6 @@ export default function ServerSidePersistence() {
     return () => clearInterval(intervalId);
     }, [dispatch]);
 
-
   useEffect(()=>{
     if(!isLoading && orderItems && departmentStatus){
       setRows(orderItems);
@@ -752,9 +751,8 @@ export default function ServerSidePersistence() {
         logRequested: po.logCom.requestedShipDate
       });
       setCurrentDeptOpenStatus(departmentStatus);
-      console.log(`department status ${JSON.stringify(departmentStatus)}`);
     }
-  },[orderItems,purchaseOrders,departmentStatus]);
+  },[orderItems,purchaseOrders,departmentStatus,isLoading]);
 
 
   useEffect(() => {
@@ -822,7 +820,6 @@ export default function ServerSidePersistence() {
   const comDepartment = user?.result?.department?.department;
 
   const columns = [
-    
     { 
       field: 'itemCode',
       headerName: 'Item Code',
@@ -1484,14 +1481,30 @@ export default function ServerSidePersistence() {
         await dispatch(updateCellEditedBy(id,{edit}));
         //
       }
- 
-      //
-      await dispatch(updateCellOrderItem(oldRow.id,newRow));
+      
+      if(newRow.itemCode !== oldRow.itemCode){
 
-      await dispatch(getCountOrderItemStatusOpen(id));
-    
-      setSnackbar({ children: 'Successfully update cell', severity: 'success' });
-      return await newRow;
+        setRows([]);
+
+        await dispatch(updateCellOrderItemWithItemCode(oldRow.id,{itemCode:newRow.itemCode.toUpperCase()}));
+
+        await dispatch(getCountOrderItemStatusOpen(id));
+      
+        setSnackbar({ children: 'Successfully update cell', severity: 'success' });
+
+        await dispatch(getOrderItems(id));
+        //
+        return await newRow;
+         
+      }
+      else{
+        await dispatch(updateCellOrderItem(oldRow.id,newRow));
+
+        await dispatch(getCountOrderItemStatusOpen(id));
+      
+        setSnackbar({ children: 'Successfully update cell', severity: 'success' });
+        return await newRow;
+      }
       
   } 
 

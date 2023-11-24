@@ -203,9 +203,6 @@ export default function StickyHeadTable() {
     }
   },[message,isLoading])
 
-  //autocomplete
-  //const buyerListSelection = [];
-
   useEffect(()=>{
 
     const user = JSON.parse(localStorage.getItem('profile'));
