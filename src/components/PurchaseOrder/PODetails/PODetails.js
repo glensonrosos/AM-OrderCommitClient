@@ -36,7 +36,7 @@ const PODetails = () =>{
 
     const user = JSON.parse(localStorage.getItem('profile'));
 
-    const {purchaseOrders,isLoading} = useSelector(state=> state.purchaseOrders); 
+    const {purchaseOrders,isLoading,message} = useSelector(state=> state.purchaseOrders); 
     const {buyers,isLoading:buyerLoading} = useSelector(state=> state.buyers);
     const {isLoading:orderItemLoading,departmentStatus} = useSelector(state=> state.orderItems);
     const {departments,isLoading:departmentLoading} = useSelector(state=> state.departments);
@@ -50,6 +50,12 @@ const PODetails = () =>{
         dispatch(getPO(id));
         dispatch(getCountOrderItemStatusOpen(id));
    },[dispatch]);
+
+   useEffect(()=>{
+    if(!isLoading && message === 'PO Number exist'){
+      setSnackbar({ children: `PO Number inputed already exist`, severity: 'error' });
+    }
+  },[message,isLoading])
 
 
     // load that will not using loading ui

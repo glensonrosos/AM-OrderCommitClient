@@ -100,8 +100,8 @@ export const updatePOByAm = (id,updatePO) => async (dispatch) =>{
 
         const {data} = await api.updatePOByAm(id,updatePO);
 
-        console.log(data);
         dispatch({type:UPDATE_PO_BY_AM,payload:data});
+        
         dispatch({type: END_LOADING_HOME});
 
     }catch(error){

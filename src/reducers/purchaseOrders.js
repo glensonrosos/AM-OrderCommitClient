@@ -33,6 +33,17 @@ export default(state = defaultState,action) => {
                 purchaseOrders: action.payload,
             };
         case UPDATE_PO_BY_AM:
+            if(action.payload.message === 'success')
+                return {
+                    ...state,
+                    message: 'success',
+                    purchaseOrders : state.purchaseOrders.map((po)=> po._id === action.payload.po._id ? action.payload.po : po) 
+                };
+            else
+                return {
+                    ...state,
+                    message: 'PO Number exist'
+                }
         case UPDATE_PO_BY_AUTO:
         case UPDATE_PO_BY_LOGISTICS:
         case UPDATE_CELL_EDIT_BY:
