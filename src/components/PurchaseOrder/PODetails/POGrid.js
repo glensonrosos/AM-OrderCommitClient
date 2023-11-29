@@ -1,7 +1,7 @@
 import React,{useState,useEffect} from 'react';
 import { DataGrid,GridToolbarExport,GridToolbarContainer,GridToolbarColumnsButton } from '@mui/x-data-grid';
 import {Snackbar,Alert,Button,Box,Tooltip,Switch,ImageList,Stack,Backdrop,CircularProgress, Typography,Select,
-        MenuItem,Table,TableHead,TableRow,TableCell,TableBody,Paper,TableContainer, Checkbox,FormControl,InputLabel,FormControlLabel} from '@mui/material';
+        MenuItem,Table,TableHead,TableRow,TableCell,TableBody,Paper,TableContainer, Checkbox,FormControl,InputLabel,Chip,FormControlLabel} from '@mui/material';
 import {Delete,Image,Add,FileDownload, DeleteSweep, DeleteForever, CancelPresentation, Download, Upload, EditCalendar, Save} from '@mui/icons-material';
 import Accordion from '@mui/material/Accordion';
 import AccordionSummary from '@mui/material/AccordionSummary';
@@ -1023,6 +1023,7 @@ export default function ServerSidePersistence() {
     { id: 'itemCode', label: 'Item Code', minWidth: 90,group: 'AM Department' },
     { id: 'description', label: 'Description', minWidth: 150,group: 'AM Department' },
     { id: 'qty', label: 'Qty', minWidth: 50 ,type: 'number',group: 'AM Department'},
+    { id: 'firstOrder', label: '1st Order', minWidth: 20 ,type: 'boolean',group: 'AM Department'},
     { id: 'amArtwork', label: 'With Artwork', minWidth: 20,type: 'boolean',group: 'AM Department' },
     { id: 'patternReleasing', label: 'Pattern Releasing',minWidth: 50, type: 'date',group: 'PD Department'},
     { id: 'productSpecs', label: 'Product Specs', minWidth: 50, type: 'date',group: 'PD Department'},
@@ -1046,15 +1047,8 @@ export default function ServerSidePersistence() {
     { id: '_id', label: 'Select All', minWidth: 20 },
   ];
 
-  /*
-   <CustomGroupHeader colSpan={4} label="AM Department" />
-                          <CustomGroupHeader colSpan={5} label="PD Department" />
-                          <CustomGroupHeader colSpan={7} label="Purchasing Department" />
-                          <CustomGroupHeader colSpan={4} label="Production Department" /> 
-                          <CustomGroupHeader colSpan={3} label="QA Department" /> */
-
   const [groupHeaderCol,setGroupHeaderCol] = useState({
-    am:4,
+    am:5,
     pd:5,
     pu:7,
     prod:4,
@@ -1078,6 +1072,7 @@ export default function ServerSidePersistence() {
         switch(columnId){
           case 'description':
           case 'qty':
+          case 'firstOrder':  
           case 'amArtwork': 
             setGroupHeaderCol({
               ...groupHeaderCol,
@@ -1128,6 +1123,7 @@ export default function ServerSidePersistence() {
         switch(columnId){
           case 'description':
           case 'qty':
+          case 'firstOrder':   
           case 'amArtwork': 
             setGroupHeaderCol({
               ...groupHeaderCol,
@@ -1484,7 +1480,7 @@ export default function ServerSidePersistence() {
       
       if(newRow.itemCode !== oldRow.itemCode){
 
-        setRows([]);
+        //setRows([]);
 
         await dispatch(updateCellOrderItemWithItemCode(oldRow.id,{itemCode:newRow.itemCode.toUpperCase()}));
 
@@ -2020,6 +2016,12 @@ export default function ServerSidePersistence() {
                               onChange={() => handleCheckboxChange('qty')} />}
                           />
                            <FormControlLabel
+                            label="1st Order"
+                            control={<Checkbox
+                              checked={visibleColumns.includes('firstOrder')}
+                              onChange={() => handleCheckboxChange('firstOrder')} />}
+                          />
+                           <FormControlLabel
                             label="With Artwork"
                             control={<Checkbox
                               checked={visibleColumns.includes('amArtwork')}
@@ -2239,8 +2241,10 @@ export default function ServerSidePersistence() {
                                           onChange={() => handleCheckboxChangeEditCellInBulk(row.id)}
                                           inputProps={{ 'aria-label': 'controlled' }}
                                         />
+                                      else if(columnTable.id === 'firstOrder')
+                                        return value == 1 ? <Chip label="YES" color="success" /> : <Chip label="NO" color="error" variant="outlined" />
                                       else if(columnTable.type === 'boolean')
-                                        return value === 0 ? 'NO' : 'YES'
+                                        return value === 0 ? <Chip label="NO" color="warning" variant="outlined" /> : <Chip label="YES" color="info" /> 
                                       else if(columnTable.type === 'number')
                                         return Number(value)
                                       else if(columnTable.type === 'date')
