@@ -1484,7 +1484,7 @@ export default function ServerSidePersistence() {
       
       if(newRow.itemCode !== oldRow.itemCode){
 
-        setRows([]);
+        //setRows([]);
 
         await dispatch(updateCellOrderItemWithItemCode(oldRow.id,{itemCode:newRow.itemCode.toUpperCase()}));
 
