@@ -11,6 +11,8 @@ import Grid from '@mui/material/Unstable_Grid2';
 
 // xlsx
 import * as XLSX from 'xlsx';
+// images pdf
+import jsPDF from 'jspdf';
 
 import { useParams } from 'react-router';
 import FileBase64 from 'react-file-base64';
@@ -21,7 +23,7 @@ import moment from 'moment';
 
 import { useDispatch,useSelector } from 'react-redux';
 import { getOrderItems,getOrderItemsNoLoading,createOrderItem,updateCellOrderItem,getCountOrderItemStatusOpen,deleteOrderItem,
-  getOrderItemImage,updateCellOrderItemInBulk,clearDateOrderItemInBulk,updateCellOrderItemWithItemCode } from '../../../actions/orderitems';
+  getOrderItemImage,updateCellOrderItemInBulk,clearDateOrderItemInBulk,updateCellOrderItemWithItemCode,getOrderItemsImages } from '../../../actions/orderitems';
 import {updateCellEditedBy,updatePOByAuto} from '../../../actions/purchaseOrders';
 import NoImage from '../../images/NoImage.jpeg'
 
@@ -45,7 +47,7 @@ export default function ServerSidePersistence() {
 
   const dispatch = useDispatch();
   // I STOP HERE... department status
-  const {isLoading,orderItems,departmentStatus,message} = useSelector(state=> state.orderItems);
+  const {isLoading,orderItems,departmentStatus,message,images} = useSelector(state=> state.orderItems);
   const {purchaseOrders} = useSelector(state => state.purchaseOrders);
   const [dataGridLoading,setDataGridLoading] = useState(false);
 
@@ -130,6 +132,7 @@ export default function ServerSidePersistence() {
       description:'',
       renderHeaderGroup: (params) => headerLastEdit('AM','Order Details'),
       children: [
+        { field: 'headerRowNumber'},
         { field: 'itemCode'},
         { field: 'image'},
         { field: 'description'},
@@ -163,6 +166,7 @@ export default function ServerSidePersistence() {
         { field: 'completionArtwork'},
         { field: 'firstPackagingMaterial'},
         { field: 'completionPackagingMaterial'},
+        { field: 'puPatternAvailability'},
         { field: 'puMoldAvailability'},
       ],
     },
@@ -232,7 +236,13 @@ export default function ServerSidePersistence() {
       rowSelected:null,
   });
   const [openDialogDeleteRow, setOpenDialogDeleteRow] = useState(false);
+
   const handleOpenDialogDeleteRow = (rowSelected) => {
+    // disable if closed
+    if(currentStatus !== 'OPEN'){
+      setSnackbar({ children: `disable from edit due to status ${currentStatus}`, severity: 'warning' });
+      return;
+    }
     setToBeDeleteRow({rowSelected});
     setOpenDialogDeleteRow(true);
   };
@@ -437,6 +447,7 @@ export default function ServerSidePersistence() {
         { field: 'completionArtwork', header: 'PU Completion Artwork', type: 'date'},
         { field: 'firstPackagingMaterial', header: 'PU First Packaging Material', type: 'date'},
         { field: 'completionPackagingMaterial', header: 'PU Completion Packaging Material', type: 'date'},
+        { field: 'puPatternAvailability', header: 'PU Pattern Availability'},
         { field: 'puMoldAvailability', header: 'PU Mold Availability'},
         { field: 'carcass', header: 'PROD Carcass', type: 'date'},
         { field: 'artwork', header: 'PROD Artwork', type: 'date'},
@@ -448,6 +459,7 @@ export default function ServerSidePersistence() {
       ],
       rows: orderItems.map(order=>{
 
+        let puPatternAvail = 'Yes';
         let puMoldAvail = 'Yes';
         let qaSampleRef = 'Yes';
         let amArtworkRef = 'Yes';
@@ -456,10 +468,15 @@ export default function ServerSidePersistence() {
           puMoldAvail = 'Yes'
         else if(order.puMoldAvailability === 0)
           puMoldAvail = 'No'
+
+        if(order.puPatternAvailability === 1) 
+          puPatternAvail = 'Yes'
+        else if(order.puPatternAvailability === 0)
+          puPatternAvail = 'No'
         
-        if(order.qaSampleRef === 1)
+        if(order.qaSampleReference === 1)
           qaSampleRef = 'Yes'
-        else if(order.qaSampleRef === 0)
+        else if(order.qaSampleReference === 0)
           qaSampleRef ='No';
 
         if(order.amArtwork === 1) 
@@ -482,6 +499,7 @@ export default function ServerSidePersistence() {
           completionArtwork: moment(order.completionArtwork).format('L'),
           firstPackagingMaterial: moment(order.firstPackagingMaterial).format('L'),
           completionPackagingMaterial: moment(order.completionPackagingMaterial).format('L'),
+          puPatternAvailability: puPatternAvail,
           puMoldAvailability: puMoldAvail,
           carcass: moment(order.carcass).format('L'),
           artwork: moment(order.artwork).format('L'),
@@ -545,6 +563,87 @@ export default function ServerSidePersistence() {
         }, 2000);
 
   };
+
+  useEffect(()=>{
+    if(images.length > 0){
+      exportToPDF();
+    }
+  },[images])
+
+
+  const exportToPDF = () => {
+
+    if(images.length === 0)
+      return;
+
+    const pdf = new jsPDF();
+  
+    images.forEach((image, index) => {
+      if (index !== 0) {
+        pdf.addPage();
+      }
+      pdf.text(10, 10, image.itemCode);
+      pdf.addImage(image.image, 'PNG', 10, 10, 200, 200);
+    });
+  
+    pdf.save(`Glenson-Gwapo.pdf`);
+
+    //stop loading
+    setDataGridLoading(false);
+  };
+
+  const RenderPuPatternAvailability = (newRow) => {
+
+    const [value,setValue] = useState(newRow.puPatternAvailability);
+
+    const handleChange = (e) => {
+
+      const comDepartment = user?.result?.department?.department;
+      if(comDepartment !== 'PURCHASING' && comDepartment !== 'AM' ){
+          setSnackbar({ children: `Only Purchasing or AM Dept are allow to edit Mold Availability`, severity: 'error' });
+          return;
+      }
+
+      if(currentStatus !== 'OPEN'){
+        setSnackbar({ children: `disable from edit due to status ${currentStatus}`, severity: 'warning' });
+        return;
+      }
+
+      setValue(e.target.value);
+
+      newRow.puPatternAvailability = e.target.value;
+      // AMCOM
+      const newUser = `${user?.result?.firstname} ${user?.result?.lastname}`;
+      const edit = {
+        puCom:{
+          editedBy: newUser,
+          updatedAt: moment(),
+        }
+      }
+     
+      const executeAwait = async () =>{
+        await dispatch(updateCellEditedBy(id,{edit}));
+        await dispatch(updateCellOrderItem(newRow?.id,newRow));
+        await dispatch(getCountOrderItemStatusOpen(id));    
+      }
+      executeAwait();
+
+      setSnackbar({ children: 'Successfully update cell', severity: 'success' });
+    };
+  
+    return(    
+      <Select
+          value={value}
+          autoWidth
+          onChange={(e)=>handleChange(e)}
+          label="Pattern Availability"
+          error={!value}
+        >
+          <MenuItem value={1}>Yes</MenuItem>
+          <MenuItem value={0}>No</MenuItem>
+      </Select>
+    )  
+  }
 
   const RenderPuMoldAvailability = (newRow) => {
 
@@ -821,6 +920,15 @@ export default function ServerSidePersistence() {
 
   const columns = [
     { 
+      field: 'headerRowNumber',
+      headerName: '#',
+      type:'number',
+      editable: false,
+      headerClassName: 'super-app-theme--header',
+      width:55, maxWidth:70, minWidth:40, 
+      pinned: true
+    },
+    { 
       field: 'itemCode',
       headerName: 'Item Code',
       type:'string',
@@ -955,6 +1063,13 @@ export default function ServerSidePersistence() {
       valueFormatter: (params) =>(params.value !== null ? moment(params?.value).format('L') : null)
     },
     {
+      field: 'puPatternAvailability',
+      headerName: 'Pattern Availability',
+      valueFormatter: ({ value }) => value ? `Yes` : `No`,
+      width: 100,minWidth: 30, maxWidth: 100,
+      renderCell: (params) => RenderPuPatternAvailability(params.row),
+    },
+    {
       field: 'puMoldAvailability',
       headerName: 'Mold Availability',
       valueFormatter: ({ value }) => value ? `Yes` : `No`,
@@ -1020,6 +1135,7 @@ export default function ServerSidePersistence() {
 
   // DATA TABLE FOR BULK EDIT --START
   const columnsTable = [
+    { id: 'headerRowNumber', label: '#', minWidth: 30,group: 'AM Department' },
     { id: 'itemCode', label: 'Item Code', minWidth: 90,group: 'AM Department' },
     { id: 'description', label: 'Description', minWidth: 150,group: 'AM Department' },
     { id: 'qty', label: 'Qty', minWidth: 50 ,type: 'number',group: 'AM Department'},
@@ -1036,6 +1152,7 @@ export default function ServerSidePersistence() {
     { id: 'completionArtwork', label: 'Completion Artwork', minWidth: 50, type: 'date',group: 'Purchasing Department'},
     { id: 'firstPackagingMaterial', label: 'First Packaging Material', minWidth: 50, type: 'date',group: 'Purchasing Department'},
     { id: 'completionPackagingMaterial', label: 'Completion Packaging Material',minWidth: 50, type: 'date',group: 'Purchasing Department'},
+    { id: 'puPatternAvailability', label: 'Pattern Availability',minWidth: 50,type: 'boolean',group: 'Purchasing Department'},
     { id: 'puMoldAvailability', label: 'Mold Availability',minWidth: 50,type: 'boolean',group: 'Purchasing Department'},
     { id: 'carcass', label: 'Carcass', minWidth: 50, type: 'date',group: 'Production Department'},
     { id: 'artwork', label: 'Artwork', minWidth: 50, type: 'date',group: 'Production Department'},
@@ -1048,9 +1165,9 @@ export default function ServerSidePersistence() {
   ];
 
   const [groupHeaderCol,setGroupHeaderCol] = useState({
-    am:5,
+    am:6,
     pd:5,
-    pu:7,
+    pu:8,
     prod:4,
     qa:3
   })
@@ -1093,6 +1210,7 @@ export default function ServerSidePersistence() {
           case 'completionArtwork':
           case 'firstPackagingMaterial':
           case 'completionPackagingMaterial':
+          case 'puPatternAvailability':
           case 'puMoldAvailability':
             setGroupHeaderCol({
               ...groupHeaderCol,
@@ -1144,6 +1262,7 @@ export default function ServerSidePersistence() {
           case 'completionArtwork':
           case 'firstPackagingMaterial':
           case 'completionPackagingMaterial':
+          case 'puPatternAvailability':
           case 'puMoldAvailability':
             setGroupHeaderCol({
               ...groupHeaderCol,
@@ -1209,6 +1328,7 @@ export default function ServerSidePersistence() {
       completionArtwork: null,
       firstPackagingMaterial: null,
       completionPackagingMaterial: null,
+      puPatternAvailability: 1,
       puMoldAvailability: 1,
       carcass: null,
       artwork: null,
@@ -1577,6 +1697,7 @@ export default function ServerSidePersistence() {
         {id:'completionArtwork',name:'Completion Artwork'},
         {id:'firstPackagingMaterial',name:'First Packaging Material'},
         {id:'completionPackagingMaterial',name:'Completion Packaging Material'},
+        {id:'puPatternAvailability',name:'Pattern Availability'},
         {id:'puMoldAvailability',name:'Mold Availability'},
       ]
     },
@@ -1651,8 +1772,11 @@ export default function ServerSidePersistence() {
 
   const handleSaveEditCellInBulk = async () =>{
 
+    setDataGridLoading(true);
+
     if(currentStatus !== 'OPEN'){
       setSnackbar({ children: `disable from edit due to status ${currentStatus}`, severity: 'warning' });
+      setDataGridLoading(false);
       return;
     }
 
@@ -1660,24 +1784,28 @@ export default function ServerSidePersistence() {
     const comDepartment = user?.result?.department?.department;
     if(comDepartment !== 'AM' && (comDepartment.toLowerCase()) !== valueEditCellInBulk){
       setSnackbar({ children: `you are not allowed to edit others department commitment`, severity: 'warning' });
+      setDataGridLoading(false);
       return;
     }
 
     // no selection
     if(selectedRowsEditCellInBulk.length === 0){
       setSnackbar({ children: `no selected rows`, severity: 'warning' });
+      setDataGridLoading(false);
       return;
     }
     else if(!valueColumnEditCellInBulk){
       setSnackbar({ children: `no Column selectted to edit`, severity: 'warning' });
+      setDataGridLoading(false);
       return;
     }else if(moment(dateBulk) <= moment(currentPO.dateIssued) || moment(dateBulk) >= moment(currentPO.shipDate)){ //glensongwapo
       setSnackbar({ children: `date inputed is invalid`, severity: 'warning' });
+      setDataGridLoading(false);
       return;
     }
 
     // success
-    if(valueColumnEditCellInBulk === 'puMoldAvailability' || valueColumnEditCellInBulk === 'qaSampleReference'){
+    if(valueColumnEditCellInBulk === 'puPatternAvailability'  || valueColumnEditCellInBulk === 'puMoldAvailability' || valueColumnEditCellInBulk === 'qaSampleReference'){
       await dispatch(updateCellOrderItemInBulk({ids:selectedRowsEditCellInBulk,column:valueColumnEditCellInBulk,val:pdYesNo}));
       
     }else{
@@ -1707,28 +1835,36 @@ export default function ServerSidePersistence() {
     setPdYesNo(1);
     setDateBulk(null);
     setSelectAllEditCellInBulk(false);
+
+    setDataGridLoading(false);
   }
 
   const handleClearDateOrderItemInBulk = async () =>{
 
+    setDataGridLoading(true);
+  
     if(currentStatus !== 'OPEN'){
       setSnackbar({ children: `disable from edit due to status ${currentStatus}`, severity: 'warning' });
+      setDataGridLoading(false);
       return;
     }
 
     // no selection
     if(selectedRowsEditCellInBulk.length === 0){
       setSnackbar({ children: `no selection selection`, severity: 'warning' });
+      setDataGridLoading(false);
       return;
     }
     else if(!valueColumnEditCellInBulk){
       setSnackbar({ children: `no column selected to edit`, severity: 'warning' });
+      setDataGridLoading(false);
       return;
     }
 
     // success
-    if(valueColumnEditCellInBulk === 'puMoldAvailability' || valueColumnEditCellInBulk === 'qaSampleReference'){
+    if(valueColumnEditCellInBulk === 'puPatternAvailability' || valueColumnEditCellInBulk === 'puMoldAvailability' || valueColumnEditCellInBulk === 'qaSampleReference'){
       setSnackbar({ children: `column selected is dont have a date values`, severity: 'warning' });
+      setDataGridLoading(false);
       return;
     }else{
       await dispatch(clearDateOrderItemInBulk({ids:selectedRowsEditCellInBulk,column:valueColumnEditCellInBulk}));                                                                                                                    
@@ -1759,14 +1895,17 @@ export default function ServerSidePersistence() {
     setSelectAllEditCellInBulk(false);
     //close diaglog clear date
     handleCloseDialogClearDate();
+
+    setDataGridLoading(false);
   }
 
   // Edit Cell in Bulk End
-
+  const rowsWithRowNumber = rows.map((row, index) => ({ ...row, headerRowNumber: index + 1 }));
  
 
   return (
     // <div style={{ height: 400, width: '100%' }}>
+    
       
     // </div>
     <Grid container spacing={2} alignItems="center" justifyContent="center">
@@ -1778,6 +1917,9 @@ export default function ServerSidePersistence() {
         <Stack direction="row" spacing={1}>
           <Button size="medium" variant="contained" color="secondary" onClick={handleAddRow} startIcon={<Add/>}>
             Add a row
+          </Button>
+          <Button size="medium" variant="contained" color="info" onClick={() => { setDataGridLoading(true); dispatch(getOrderItemsImages(id));}} startIcon={<FileDownload/>}>
+            Export All Images
           </Button>
           <Button size="medium" variant="contained" color="success" onClick={() => exportToExcel()} startIcon={<FileDownload/>}>
             Export to excel
@@ -1793,7 +1935,7 @@ export default function ServerSidePersistence() {
             Total Rows : {rows.length}
           </Typography>
         <DataGrid
-          rows={rows}
+          rows={rowsWithRowNumber}
           columns={columns}
           processRowUpdate={processRowUpdate}
           onProcessRowUpdateError={handleProcessRowUpdateError}
@@ -2105,6 +2247,12 @@ export default function ServerSidePersistence() {
                               checked={visibleColumns.includes('completionPackagingMaterial')}
                               onChange={() => handleCheckboxChange('completionPackagingMaterial')} />}
                           />
+                           <FormControlLabel
+                            label="Pattern Availabilty"
+                            control={<Checkbox
+                              checked={visibleColumns.includes('puPatternAvailability')}
+                              onChange={() => handleCheckboxChange('puPatternAvailability')} />}
+                          />
                           <FormControlLabel
                             label="Mold Availabilty"
                             control={<Checkbox
@@ -2172,6 +2320,10 @@ export default function ServerSidePersistence() {
                   </AccordionDetails>
                   </Accordion>
                   </div>
+
+                  <Backdrop sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }} open={dataGridLoading}>
+                    <CircularProgress color="inherit" />
+                  </Backdrop>
                   
                   <TableContainer sx={{ maxHeight: 500 }}>
                       <Table stickyHeader aria-label="sticky table" size='small'>
@@ -2228,7 +2380,7 @@ export default function ServerSidePersistence() {
                       </TableHead>
                       <TableBody>
                           {
-                          rows.map((row, i) => (
+                          rowsWithRowNumber.map((row, i) => (
                             <TableRow  hover role="checkbox" tabIndex={-1} key={i}>
                               {columnsTable
                                 .filter((columnTable) => visibleColumns.includes(columnTable.id))
@@ -2319,12 +2471,12 @@ export default function ServerSidePersistence() {
                         }
                       </FormControl>
                       <div style={{display: 
-                        valueColumnEditCellInBulk === 'puMoldAvailability' || valueColumnEditCellInBulk === 'qaSampleReference' 
+                        valueColumnEditCellInBulk === 'puPatternAvailability'|| valueColumnEditCellInBulk === 'puMoldAvailability' || valueColumnEditCellInBulk === 'qaSampleReference' 
                         ? 'none' : 'block'}}>
                         <DatePicker label="Date Bulk Edit" maxDate={moment().add(2,'y')} minDate={moment().add(-1,'y')}  onChange={(e)=>setDateBulk(e)} value={moment(dateBulk)}/>
                       </div>
                       <div style={{display: 
-                        valueColumnEditCellInBulk === 'puMoldAvailability' || valueColumnEditCellInBulk === 'qaSampleReference' 
+                        valueColumnEditCellInBulk === 'puPatternAvailability' || valueColumnEditCellInBulk === 'puMoldAvailability' || valueColumnEditCellInBulk === 'qaSampleReference' 
                         ? 'block' : 'none'}}>
                         <Select
                               value={pdYesNo}
