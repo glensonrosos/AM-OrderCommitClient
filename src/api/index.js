@@ -1,7 +1,7 @@
 import axios from 'axios';
 
-//const API = axios.create({baseURL: 'http://localhost:5000/oc'});
-const API = axios.create({baseURL: 'http://10.0.1.221:5000/oc'});
+const API = axios.create({baseURL: 'http://10.0.1.249:5000/oc'});
+//const API = axios.create({baseURL: 'http://10.0.1.221:5000/oc'});
 
 //PO
 export const getPOs = (page) => API.get(`/purchaseOrders?page=${page}`);
@@ -26,6 +26,7 @@ export const getDepartments = () => API.get(`/departments`);
 //ORDER ITEM
 export const getOrderItem = (id) => API.get(`/orderitems/${id}`);
 export const getOrderItemImage = (id) => API.get(`/orderitems/${id}/image`);
+export const getOrderItemImages = (id) => API.get(`/orderitems/${id}/getOrderItemImages`);
 export const getCountOrderItemStatusOpen = (id) => API.get(`/orderitems/${id}/getCountOrderItemStatusOpen`);
 export const createOrderItem = (newOrderItem) => API.post(`/orderitems`,newOrderItem);
 export const deleteOrderItem = (id) => API.delete(`/orderitems/${id}`);

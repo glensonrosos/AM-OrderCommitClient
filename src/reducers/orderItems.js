@@ -1,6 +1,6 @@
 import { GET_ORDER_ITEMS_POID,GET_ORDER_ITEM_IMAGE,DELETE_ORDER_ITEM,CREATE_ORDER_ITEM_POID,
     UPDATE_CELL_ORDER_ITEM,START_LOADING_HOME,END_LOADING_HOME, UPDATE_CELL_ORDER_ITEM_IMAGE,
-    GET_ORDER_ITEM_STATUS_OPEN, UPDATE_CELL_ORDER_ITEM_BULK,CLEAR_DATE_CELL_ORDER_ITEM_BULK,UPDATE_CELL_ORDER_ITEM_ITEM_CODE } from "../constant/actionTypes";
+    GET_ORDER_ITEM_STATUS_OPEN, UPDATE_CELL_ORDER_ITEM_BULK,CLEAR_DATE_CELL_ORDER_ITEM_BULK,UPDATE_CELL_ORDER_ITEM_ITEM_CODE, GET_ORDER_ITEMS_IMAGES_POID } from "../constant/actionTypes";
 
 const defaultState = {
     isLoading: false,
@@ -8,6 +8,7 @@ const defaultState = {
     departmentStatus: null,
     success: false,
     message:null,
+    images:[],
 }
 
 
@@ -17,6 +18,12 @@ export default(state = defaultState,action) =>{
             return {
                 ...state,
                 orderItems: action.payload,
+                message:null,
+            }
+        case GET_ORDER_ITEMS_IMAGES_POID:
+            return {
+                ...state,
+                images: action.payload,
                 message:null,
             }
         case UPDATE_CELL_ORDER_ITEM_ITEM_CODE:

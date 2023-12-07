@@ -2,13 +2,24 @@ import * as api from '../api';
 import { GET_ORDER_ITEMS_POID,GET_ORDER_ITEM_IMAGE,DELETE_ORDER_ITEM,CREATE_ORDER_ITEM_POID,
     START_LOADING_HOME,END_LOADING_HOME, UPDATE_CELL_ORDER_ITEM,
     UPDATE_CELL_ORDER_ITEM_IMAGE,GET_ORDER_ITEM_STATUS_OPEN,UPDATE_CELL_ORDER_ITEM_BULK,CLEAR_DATE_CELL_ORDER_ITEM_BULK,
-    UPDATE_CELL_ORDER_ITEM_ITEM_CODE } from '../constant/actionTypes';
+    UPDATE_CELL_ORDER_ITEM_ITEM_CODE, GET_ORDER_ITEMS_IMAGES_POID } from '../constant/actionTypes';
 
 export const getOrderItems = (id) => async (dispatch) =>{
     try{
         dispatch({type:START_LOADING_HOME});
         const {data} = await api.getOrderItem(id);
         dispatch({type: GET_ORDER_ITEMS_POID,payload:data});
+        dispatch({type:END_LOADING_HOME});
+    }catch(error){
+        console.log(error)
+    }
+}
+
+export const getOrderItemsImages = (id) => async(dispatch) =>{
+    try{
+        dispatch({type:START_LOADING_HOME});
+        const {data} = await api.getOrderItemImages(id);
+        dispatch({type: GET_ORDER_ITEMS_IMAGES_POID,payload:data});
         dispatch({type:END_LOADING_HOME});
     }catch(error){
         console.log(error)

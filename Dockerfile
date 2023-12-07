@@ -5,7 +5,7 @@ FROM node:18.17.1-buster
 WORKDIR /usr/src/app
 
 # Copy package.json and package-lock.json to the working directory
-COPY package.json yarn.lock ./
+COPY package.json ./
 
 # Install dependencies
 RUN yarn install
@@ -14,7 +14,7 @@ RUN yarn install
 COPY . .
 
 # Specify the port the app runs on
-EXPOSE 3000
+EXPOSE 3001
 
 # Command to run your application
 CMD ["yarn", "start"]
