@@ -1613,6 +1613,15 @@ export default function ServerSidePersistence() {
     
 
   const handleChangeEditCellInBulkDepartment = (e) => {
+
+
+    /*
+     <MenuItem value='pd'>PD Commitment</MenuItem>
+      <MenuItem value='pu'>Purchasing Commitment</MenuItem>
+      <MenuItem value='prod'>Production Commitment</MenuItem>
+      <MenuItem value='qa'>QA Commitment</MenuItem>
+    */
+
     setSelectedRowsEditCellInBulk([])
     setValueEditCellInBulk(e.target.value);
     setDateBulk(null)
@@ -1658,7 +1667,19 @@ export default function ServerSidePersistence() {
 
     //check dept
     const comDepartment = user?.result?.department?.department;
-    if(comDepartment !== 'AM' && (comDepartment.toLowerCase()) !== valueEditCellInBulk){
+    let newVal = 'AM';
+
+    if(comDepartment === 'PD'){
+      newVal = 'pd'
+    }else if(comDepartment === 'PURCHASING'){
+      newVal = 'pu'
+    }else if(comDepartment === 'PRODUCTION'){
+      newVal = 'prod'
+    }else if(comDepartment === 'QA'){
+      newVal = 'qa'
+    }
+
+    if(comDepartment !== 'AM' && (newVal !== valueEditCellInBulk)){
       setSnackbar({ children: `you are not allowed to edit others department commitment`, severity: 'warning' });
       return;
     }
