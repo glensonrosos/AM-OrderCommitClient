@@ -583,7 +583,7 @@ export default function ServerSidePersistence() {
         pdf.addPage();
       }
       pdf.text(10, 10, image.itemCode);
-      pdf.addImage(image.image, 'PNG', 10, 10, 200, 200);
+      pdf.addImage(image.image, 'PNG', 11, 11, 150, 150);
     });
   
     pdf.save(`Glenson-Gwapo.pdf`);
